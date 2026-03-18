@@ -75,7 +75,9 @@
             letter-spacing: 2px;
             text-transform: uppercase;
         }
-        .header-right { text-align: right; }
+        .header-right {
+            text-align: right;
+        }
         .season {
             font-family: 'Barlow Condensed', sans-serif;
             font-size: 20px;
@@ -83,7 +85,11 @@
             color: var(--gold);
             letter-spacing: 2px;
         }
-        .updated { font-size: 11px; color: var(--textdim); margin-top: 2px; }
+        .updated {
+            font-size: 11px;
+            color: var(--textdim);
+            margin-top: 2px;
+        }
         .body {
             flex: 1;
             padding: 40px 50px;
@@ -153,8 +159,19 @@
             text-align: center;
             border-left: 3px solid var(--blue);
         }
-        .dept-name { font-size: 11px; color: var(--textdim); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; }
-        .dept-count { font-family: 'Barlow Condensed', sans-serif; font-size: 18px; font-weight: 900; color: var(--green); }
+        .dept-name {
+            font-size: 11px;
+            color: var(--textdim);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 4px;
+        }
+        .dept-count {
+            font-family: 'Barlow Condensed', sans-serif;
+            font-size: 18px;
+            font-weight: 900;
+            color: var(--green);
+        }
         .legend {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -163,8 +180,17 @@
             padding-top: 15px;
             border-top: 1px solid var(--border);
         }
-        .legend-item { display: flex; align-items: center; gap: 8px; font-size: 12px; }
-        .legend-dot { width: 12px; height: 12px; border-radius: 2px; }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 12px;
+        }
+        .legend-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 2px;
+        }
     </style>
 </head>
 <body>
@@ -196,12 +222,30 @@
                     <canvas id="statusChart"></canvas>
                 </div>
                 <div class="legend">
-                    <div class="legend-item"><div class="legend-dot" style="background: #00E887;"></div><span>Completed</span></div>
-                    <div class="legend-item"><div class="legend-dot" style="background: #00CFFF;"></div><span>On Track</span></div>
-                    <div class="legend-item"><div class="legend-dot" style="background: #FFD13A;"></div><span>At Risk</span></div>
-                    <div class="legend-item"><div class="legend-dot" style="background: #FF4455;"></div><span>Off Track</span></div>
-                    <div class="legend-item"><div class="legend-dot" style="background: #FF8C1A;"></div><span>Not Started</span></div>
-                    <div class="legend-item"><div class="legend-dot" style="background: #7A6A8A;"></div><span>AI Risk</span></div>
+                    <div class="legend-item">
+                        <div class="legend-dot" style="background: #00E887;"></div>
+                        <span>Completed</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-dot" style="background: #00CFFF;"></div>
+                        <span>On Track</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-dot" style="background: #FFD13A;"></div>
+                        <span>At Risk</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-dot" style="background: #FF4455;"></div>
+                        <span>Off Track</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-dot" style="background: #FF8C1A;"></div>
+                        <span>Not Started</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-dot" style="background: #7A6A8A;"></div>
+                        <span>AI Risk</span>
+                    </div>
                 </div>
             </div>
 
@@ -212,10 +256,22 @@
                     <canvas id="progressChart"></canvas>
                 </div>
                 <div class="stats">
-                    <div class="stat"><div class="stat-label">Total Goals</div><div class="stat-value" id="total-goals">27</div></div>
-                    <div class="stat"><div class="stat-label">Completed</div><div class="stat-value" style="color: var(--green);" id="completed-count">0</div></div>
-                    <div class="stat"><div class="stat-label">On Track</div><div class="stat-value" style="color: var(--blue);" id="ontrack-count">0</div></div>
-                    <div class="stat"><div class="stat-label">At Risk</div><div class="stat-value" style="color: var(--gold);" id="atrisk-count">0</div></div>
+                    <div class="stat">
+                        <div class="stat-label">Total Goals</div>
+                        <div class="stat-value" id="total-goals">27</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-label">Completed</div>
+                        <div class="stat-value" style="color: var(--green);" id="completed-count">0</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-label">On Track</div>
+                        <div class="stat-value" style="color: var(--blue);" id="ontrack-count">0</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-label">At Risk</div>
+                        <div class="stat-value" style="color: var(--gold);" id="atrisk-count">0</div>
+                    </div>
                 </div>
             </div>
 
@@ -223,15 +279,42 @@
             <div class="card">
                 <div class="card-title">By Department (3 Goals Each)</div>
                 <div class="dept-grid" id="dept-grid">
-                    <div class="dept-card"><div class="dept-name">AV</div><div class="dept-count" id="dept-AV">0/3</div></div>
-                    <div class="dept-card"><div class="dept-name">Design</div><div class="dept-count" id="dept-Design">0/3</div></div>
-                    <div class="dept-card"><div class="dept-name">Expo</div><div class="dept-count" id="dept-Expo">0/3</div></div>
-                    <div class="dept-card"><div class="dept-name">Finance</div><div class="dept-count" id="dept-Finance">0/3</div></div>
-                    <div class="dept-card"><div class="dept-name">HR</div><div class="dept-count" id="dept-People, Culture &amp; Performance">0/3</div></div>
-                    <div class="dept-card"><div class="dept-name">Permanent</div><div class="dept-count" id="dept-Permanent">0/3</div></div>
-                    <div class="dept-card"><div class="dept-name">Production</div><div class="dept-count" id="dept-Production">0/3</div></div>
-                    <div class="dept-card"><div class="dept-name">Systems</div><div class="dept-count" id="dept-Systems">0/3</div></div>
-                    <div class="dept-card"><div class="dept-name">Warehouse</div><div class="dept-count" id="dept-Warehouse">0/3</div></div>
+                    <div class="dept-card">
+                        <div class="dept-name">AV</div>
+                        <div class="dept-count" id="dept-AV">0/3</div>
+                    </div>
+                    <div class="dept-card">
+                        <div class="dept-name">Design</div>
+                        <div class="dept-count" id="dept-Design">0/3</div>
+                    </div>
+                    <div class="dept-card">
+                        <div class="dept-name">Expo</div>
+                        <div class="dept-count" id="dept-Expo">0/3</div>
+                    </div>
+                    <div class="dept-card">
+                        <div class="dept-name">Finance</div>
+                        <div class="dept-count" id="dept-Finance">0/3</div>
+                    </div>
+                    <div class="dept-card">
+                        <div class="dept-name">HR</div>
+                        <div class="dept-count" id="dept-People, Culture & Performance">0/3</div>
+                    </div>
+                    <div class="dept-card">
+                        <div class="dept-name">Permanent</div>
+                        <div class="dept-count" id="dept-Permanent">0/3</div>
+                    </div>
+                    <div class="dept-card">
+                        <div class="dept-name">Production</div>
+                        <div class="dept-count" id="dept-Production">0/3</div>
+                    </div>
+                    <div class="dept-card">
+                        <div class="dept-name">Systems</div>
+                        <div class="dept-count" id="dept-Systems">0/3</div>
+                    </div>
+                    <div class="dept-card">
+                        <div class="dept-name">Warehouse</div>
+                        <div class="dept-count" id="dept-Warehouse">0/3</div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -246,10 +329,13 @@
         let statusCounts = {};
         let deptCounts = {};
 
+        let dataLoaded = false;
+
         async function fetchData() {
             try {
                 const goalsData = await fetch(CONFIG.goalsSheetUrl).then(r => r.text());
                 processGoalsData(goalsData);
+                dataLoaded = true;
                 updateDashboard();
             } catch (error) {
                 console.error('Error fetching data:', error);
@@ -279,23 +365,38 @@
 
         function processGoalsData(csv) {
             const lines = csv.split('\n');
-            statusCounts = { 'Completed': 0, 'On Track': 0, 'At Risk': 0, 'Off Track': 0, 'Not Started': 0, 'AI Risk': 0 };
+            statusCounts = {
+                'Completed': 0,
+                'On Track': 0,
+                'At Risk': 0,
+                'Off Track': 0,
+                'Not Started': 0,
+                'AI Risk': 0
+            };
             deptCounts = {};
 
             lines.forEach((line, idx) => {
                 if (idx > 0 && line.trim()) {
                     const cols = parseCSVLine(line);
                     const dept = cols[0].trim();
-                    const status = cols[2].trim() || 'Not Started';
+                    const status = cols[5].trim() || 'Not Started';
 
                     if (!deptCounts[dept]) deptCounts[dept] = 0;
 
-                    if (status.includes('Completed')) { statusCounts['Completed']++; deptCounts[dept]++; }
-                    else if (status.includes('On Track')) { statusCounts['On Track']++; }
-                    else if (status.includes('At Risk')) { statusCounts['At Risk']++; }
-                    else if (status.includes('Off Track')) { statusCounts['Off Track']++; }
-                    else if (status.includes('AI Risk')) { statusCounts['AI Risk']++; }
-                    else { statusCounts['Not Started']++; }
+                    if (status.includes('Completed')) {
+                        statusCounts['Completed']++;
+                        deptCounts[dept]++;
+                    } else if (status.includes('On Track')) {
+                        statusCounts['On Track']++;
+                    } else if (status.includes('At Risk')) {
+                        statusCounts['At Risk']++;
+                    } else if (status.includes('Off Track')) {
+                        statusCounts['Off Track']++;
+                    } else if (status.includes('AI Risk')) {
+                        statusCounts['AI Risk']++;
+                    } else {
+                        statusCounts['Not Started']++;
+                    }
                 }
             });
         }
@@ -311,7 +412,7 @@
             document.getElementById('atrisk-count').textContent = atrisk;
 
             Object.keys(deptCounts).forEach(dept => {
-                const el = document.getElementById('dept-' + dept);
+                const el = document.getElementById(`dept-${dept}`);
                 if (el) {
                     el.textContent = deptCounts[dept] + '/3';
                     el.style.color = deptCounts[dept] >= 2 ? '#00E887' : deptCounts[dept] === 1 ? '#00CFFF' : '#FF8C1A';
@@ -339,7 +440,14 @@
                     labels: ['Completed', 'On Track', 'At Risk', 'Off Track', 'Not Started', 'AI Risk'],
                     datasets: [{
                         data: statusData,
-                        backgroundColor: ['#00E887','#00CFFF','#FFD13A','#FF4455','#FF8C1A','#7A6A8A'],
+                        backgroundColor: [
+                            '#00E887',
+                            '#00CFFF',
+                            '#FFD13A',
+                            '#FF4455',
+                            '#FF8C1A',
+                            '#7A6A8A'
+                        ],
                         borderColor: '#0f1628',
                         borderWidth: 2
                     }]
@@ -372,7 +480,9 @@
                     responsive: true,
                     maintainAspectRatio: false,
                     plugins: { legend: { display: false } },
-                    scales: { x: { max: 27 } }
+                    scales: {
+                        x: { max: 27 }
+                    }
                 }
             });
         }
@@ -388,3 +498,4 @@
     </script>
 </body>
 </html>
+
