@@ -1,0 +1,603 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=1920, initial-scale=1.0">
+    <title>Xzibit Bonus Dashboard 2025-26</title>
+    <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,400;0,600;0,700;0,800;0,900;1,700&family=Barlow:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --bg: #080c18;
+            --surface: #0f1628;
+            --surface2: #161d35;
+            --border: rgba(255,255,255,0.07);
+            --blue: #00CFFF;
+            --gold: #FFD13A;
+            --green: #00E887;
+            --orange: #FF8C1A;
+            --red: #FF4455;
+            --text: #E8EEFF;
+            --textdim: #7A84A8;
+        }
+        html, body {
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'Barlow', sans-serif;
+        }
+        .dashboard {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 50px;
+            height: 80px;
+            background: linear-gradient(90deg, var(--surface) 0%, rgba(15,22,40,0.8) 100%);
+            border-bottom: 2px solid var(--blue);
+        }
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+        .logo-x {
+            width: 50px;
+            height: 50px;
+            background: var(--blue);
+            color: var(--bg);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Barlow Condensed', sans-serif;
+            font-size: 36px;
+            font-weight: 900;
+            border-radius: 6px;
+        }
+        .header-text h1 {
+            font-family: 'Barlow Condensed', sans-serif;
+            font-size: 28px;
+            font-weight: 900;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+        }
+        .header-text p {
+            font-size: 11px;
+            color: var(--blue);
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+        .header-right {
+            text-align: right;
+        }
+        .season {
+            font-family: 'Barlow Condensed', sans-serif;
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--gold);
+            letter-spacing: 2px;
+        }
+        .updated {
+            font-size: 11px;
+            color: var(--textdim);
+            margin-top: 2px;
+        }
+        .body {
+            flex: 1;
+            padding: 40px 50px;
+            display: flex;
+            flex-direction: column;
+            gap: 30px;
+            overflow-y: auto;
+        }
+        .metrics-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 25px;
+        }
+        .metric-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 25px;
+            position: relative;
+            overflow: hidden;
+        }
+        .metric-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+        }
+        .metric-card.revenue::before { background: var(--blue); }
+        .metric-card.margin::before { background: var(--gold); }
+        .metric-card.goals::before { background: var(--green); }
+        .metric-label {
+            font-family: 'Barlow Condensed', sans-serif;
+            font-size: 14px;
+            font-weight: 700;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            color: var(--textdim);
+            margin-bottom: 15px;
+        }
+        .metric-value {
+            font-family: 'Barlow Condensed', sans-serif;
+            font-size: 48px;
+            font-weight: 900;
+            margin-bottom: 8px;
+            line-height: 1;
+        }
+        .metric-value.blue { color: var(--blue); }
+        .metric-value.gold { color: var(--gold); }
+        .metric-value.green { color: var(--green); }
+        .metric-target {
+            font-size: 12px;
+            color: var(--textdim);
+            margin-bottom: 15px;
+        }
+        .progress-bar {
+            height: 8px;
+            background: var(--surface2);
+            border-radius: 4px;
+            overflow: hidden;
+            margin-bottom: 12px;
+        }
+        .progress-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 1.5s cubic-bezier(0.4,0,0.2,1);
+        }
+        .progress-fill.blue { background: linear-gradient(90deg, #0090cc, var(--blue)); }
+        .progress-fill.gold { background: linear-gradient(90deg, #cc9900, var(--gold)); }
+        .progress-fill.green { background: linear-gradient(90deg, #00aa55, var(--green)); }
+        .metric-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 13px;
+        }
+        .metric-pct {
+            font-family: 'Barlow Condensed', sans-serif;
+            font-weight: 700;
+            font-size: 16px;
+        }
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 12px;
+            border-radius: 16px;
+            font-family: 'Barlow Condensed', sans-serif;
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+        .badge.pass { background: rgba(0,232,135,0.15); color: var(--green); border: 1px solid rgba(0,232,135,0.3); }
+        .badge.fail { background: rgba(255,68,85,0.15); color: var(--red); border: 1px solid rgba(255,68,85,0.3); }
+        .chart-container {
+            position: relative;
+            height: 240px;
+            margin-top: 20px;
+        }
+        .bonus-section {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 30px;
+            margin-top: auto;
+        }
+        .bonus-title {
+            font-family: 'Barlow Condensed', sans-serif;
+            font-size: 16px;
+            font-weight: 700;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            color: var(--textdim);
+            margin-bottom: 20px;
+        }
+        .bonus-criteria {
+            display: flex;
+            gap: 40px;
+            justify-content: center;
+        }
+        .criterion {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 16px;
+        }
+        .criterion-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 900;
+            font-size: 16px;
+        }
+        .criterion-icon.pass { background: var(--green); color: #000; }
+        .criterion-icon.fail { background: var(--surface2); color: var(--textdim); border: 1px solid var(--textdim); }
+        .bonus-status {
+            text-align: center;
+            margin-top: 25px;
+            padding-top: 20px;
+            border-top: 1px solid var(--border);
+        }
+        .status-label {
+            font-family: 'Barlow Condensed', sans-serif;
+            font-size: 14px;
+            color: var(--textdim);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 8px;
+        }
+        .status-value {
+            font-family: 'Barlow Condensed', sans-serif;
+            font-size: 32px;
+            font-weight: 900;
+            letter-spacing: 2px;
+        }
+        .status-value.unlocked { color: var(--green); }
+        .status-value.locked { color: var(--red); }
+    </style>
+</head>
+<body>
+    <div class="dashboard">
+        <!-- Header -->
+        <div class="header">
+            <div class="header-left">
+                <div class="logo-x">X</div>
+                <div class="header-text">
+                    <h1>Xzibit</h1>
+                    <p>Imagination Captured</p>
+                </div>
+            </div>
+            <div style="flex: 1; text-align: center;">
+                <h1 style="font-size: 24px; letter-spacing: 3px; text-transform: uppercase; color: var(--textdim);">Company Bonus Dashboard</h1>
+            </div>
+            <div class="header-right">
+                <div class="season">2025–26</div>
+                <div class="updated" id="updated">Updated now</div>
+            </div>
+        </div>
+
+        <!-- Body -->
+        <div class="body">
+            <!-- Metrics -->
+            <div class="metrics-row">
+                <!-- Revenue -->
+                <div class="metric-card revenue">
+                    <div class="metric-label">Revenue</div>
+                    <div class="metric-value blue" id="revenue-value">$0M</div>
+                    <div class="metric-target">Target: <span id="revenue-target">$10.3M</span></div>
+                    <div class="progress-bar">
+                        <div class="progress-fill blue" id="revenue-progress" style="width: 0%"></div>
+                    </div>
+                    <div class="metric-footer">
+                        <span class="metric-pct" id="revenue-pct">0%</span>
+                        <span class="badge pass" id="revenue-badge">✓ ON TARGET</span>
+                    </div>
+                    <div class="chart-container"><canvas id="revenueChart"></canvas></div>
+                </div>
+
+                <!-- Gross Margin -->
+                <div class="metric-card margin">
+                    <div class="metric-label">Gross Margin</div>
+                    <div class="metric-value gold" id="margin-value">0%</div>
+                    <div class="metric-target">Target: <span id="margin-target">31.66%</span></div>
+                    <div class="progress-bar">
+                        <div class="progress-fill gold" id="margin-progress" style="width: 0%"></div>
+                    </div>
+                    <div class="metric-footer">
+                        <span class="metric-pct" id="margin-pct">0%</span>
+                        <span class="badge pass" id="margin-badge">✓ ON TARGET</span>
+                    </div>
+                    <div class="chart-container"><canvas id="marginChart"></canvas></div>
+                </div>
+
+                <!-- Goals -->
+                <div class="metric-card goals">
+                    <div class="metric-label">Team Goals</div>
+                    <div class="metric-value green" id="goals-value">0/27</div>
+                    <div class="metric-target">Target: <span id="goals-target">50% (14/27)</span></div>
+                    <div class="progress-bar">
+                        <div class="progress-fill green" id="goals-progress" style="width: 0%"></div>
+                    </div>
+                    <div class="metric-footer">
+                        <span class="metric-pct" id="goals-pct">0%</span>
+                        <span class="badge pass" id="goals-badge">✓ ACHIEVED</span>
+                    </div>
+                    <div class="chart-container"><canvas id="goalsChart"></canvas></div>
+                </div>
+            </div>
+
+            <!-- Bonus Section -->
+            <div class="bonus-section">
+                <div class="bonus-title">🏆 Bonus Criteria</div>
+                <div class="bonus-criteria">
+                    <div class="criterion">
+                        <div class="criterion-icon pass">✓</div>
+                        <span>Revenue Target</span>
+                    </div>
+                    <div class="criterion">
+                        <div class="criterion-icon pass">✓</div>
+                        <span>Gross Margin Target</span>
+                    </div>
+                    <div class="criterion">
+                        <div class="criterion-icon pass">✓</div>
+                        <span>50% Goals Achieved</span>
+                    </div>
+                </div>
+                <div class="bonus-status">
+                    <div class="status-label">Bonus Status</div>
+                    <div class="status-value unlocked">🔓 UNLOCKED</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const CONFIG = {
+            financialSheetUrl: 'https://docs.google.com/spreadsheets/d/1VumQnhFi2siIvaWHPZ1LuMdFiqI6ifjS_sHJIAKRi4c/export?format=csv&gid=864771061',
+            goalsSheetUrl: 'https://docs.google.com/spreadsheets/d/1VumQnhFi2siIvaWHPZ1LuMdFiqI6ifjS_sHJIAKRi4c/export?format=csv&gid=368453036'
+        };
+
+        let revenueChart, marginChart, goalsChart;
+
+        async function fetchData() {
+            try {
+                const [financialData, goalsData] = await Promise.all([
+                    fetch(CONFIG.financialSheetUrl).then(r => r.text()),
+                    fetch(CONFIG.goalsSheetUrl).then(r => r.text())
+                ]);
+
+                processFinancialData(financialData);
+                processGoalsData(goalsData);
+                updateDashboard();
+            } catch (error) {
+                console.error('Error fetching data:', error);
+                updateDashboard();
+            }
+        }
+
+        function parseCSVLine(line) {
+            const result = [];
+            let current = '';
+            let inQuotes = false;
+            for (let i = 0; i < line.length; i++) {
+                const char = line[i];
+                if (char === '"') {
+                    if (inQuotes && line[i+1] === '"') { current += '"'; i++; }
+                    else { inQuotes = !inQuotes; }
+                } else if (char === ',' && !inQuotes) {
+                    result.push(current.trim());
+                    current = '';
+                } else {
+                    current += char;
+                }
+            }
+            result.push(current.trim());
+            return result;
+        }
+
+        function parseNumber(v) {
+            if (!v) return 0;
+            const s = String(v).replace(/[$,%"]/g, '').trim();
+            return parseFloat(s) || 0;
+        }
+
+        function processFinancialData(csv) {
+            const lines = csv.split('\n');
+            window.financialData = {};
+
+            lines.forEach((line, idx) => {
+                if (idx === 12) { // Row 13 - Actual Income
+                    const values = parseCSVLine(line).slice(1, 13);
+                    const monthly = values.map(v => parseNumber(v));
+                    window.financialData.monthlyRevenue = monthly;
+                    window.financialData.actualRevenue = monthly.reduce((a, b) => a + b, 0);
+                }
+                if (idx === 15) { // Row 16 - Actual GP Margin %
+                    const values = parseCSVLine(line).slice(1, 13);
+                    const margins = values.map(v => {
+                        const n = parseNumber(v);
+                        // Handle both decimal (0.31) and percentage (31.66) formats
+                        return n > 0 && n < 1 ? n * 100 : n;
+                    });
+                    window.financialData.margins = margins;
+                    // Use last non-zero value as current margin
+                    const nonZero = margins.filter(m => m > 0);
+                    window.financialData.currentMargin = nonZero.length > 0 ? nonZero[nonZero.length - 1] : 0;
+                }
+            });
+
+            window.financialData.revenueTarget = 10342000;
+            window.financialData.marginTarget = 31.66;
+        }
+
+        function processGoalsData(csv) {
+            const lines = csv.split('\n');
+            window.goalsData = { completed: 0, total: 0 };
+
+            lines.forEach((line, idx) => {
+                if (idx > 0 && line.trim()) {
+                    window.goalsData.total++;
+                    const cols = parseCSVLine(line);
+                    if (cols[2] && cols[2].includes('Completed')) {
+                        window.goalsData.completed++;
+                    }
+                }
+            });
+        }
+
+        function updateDashboard() {
+            const revenue = window.financialData?.actualRevenue || 0;
+            const revenueTarget = window.financialData?.revenueTarget || 10342000;
+            const revenuePct = Math.round((revenue / revenueTarget) * 100);
+
+            const margin = window.financialData?.currentMargin || 0;
+            const marginTarget = window.financialData?.marginTarget || 31.66;
+            const marginPct = Math.round((margin / marginTarget) * 100);
+
+            const completed = window.goalsData?.completed || 0;
+            const total = window.goalsData?.total || 27;
+            const targetGoals = 14;
+            const goalsPct = Math.round((completed / targetGoals) * 100);
+
+            document.getElementById('revenue-value').textContent = '$' + (revenue / 1000000).toFixed(2) + 'M';
+            document.getElementById('revenue-pct').textContent = revenuePct + '%';
+            document.getElementById('revenue-progress').style.width = Math.min(revenuePct, 100) + '%';
+            document.getElementById('revenue-badge').textContent = revenuePct >= 100 ? '✓ ON TARGET' : '⚠ AT RISK';
+            document.getElementById('revenue-badge').className = revenuePct >= 100 ? 'badge pass' : 'badge fail';
+
+            document.getElementById('margin-value').textContent = margin.toFixed(2) + '%';
+            document.getElementById('margin-pct').textContent = marginPct + '%';
+            document.getElementById('margin-progress').style.width = Math.min(marginPct, 100) + '%';
+            document.getElementById('margin-badge').textContent = marginPct >= 100 ? '✓ ON TARGET' : '⚠ AT RISK';
+            document.getElementById('margin-badge').className = marginPct >= 100 ? 'badge pass' : 'badge fail';
+
+            document.getElementById('goals-value').textContent = completed + '/' + total;
+            document.getElementById('goals-pct').textContent = goalsPct + '%';
+            document.getElementById('goals-progress').style.width = Math.min(goalsPct, 100) + '%';
+            document.getElementById('goals-badge').textContent = completed >= targetGoals ? '✓ ACHIEVED' : '◐ IN PROGRESS';
+            document.getElementById('goals-badge').className = completed >= targetGoals ? 'badge pass' : 'badge fail';
+
+            updateCharts();
+            updateBonusStatus(revenuePct, marginPct, goalsPct);
+            updateTimestamp();
+        }
+
+        function updateCharts() {
+            const monthLabels = ['Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
+            const allRevenues = window.financialData?.monthlyRevenue || [];
+            const allMargins = window.financialData?.margins || [];
+            // Only chart months with data
+            const activeRevenues = allRevenues.filter(v => v > 0);
+            const activeMargins = allMargins.filter(v => v > 0);
+            const revenueLabels = monthLabels.slice(0, activeRevenues.length);
+            const marginLabels = monthLabels.slice(0, activeMargins.length);
+
+            if (revenueChart) revenueChart.destroy();
+            revenueChart = new Chart(document.getElementById('revenueChart'), {
+                type: 'line',
+                data: {
+                    labels: revenueLabels.length > 0 ? revenueLabels : monthLabels.slice(0, 3),
+                    datasets: [{
+                        label: 'Revenue',
+                        data: activeRevenues.length > 0 ? activeRevenues : [0],
+                        borderColor: '#00CFFF',
+                        backgroundColor: 'rgba(0, 207, 255, 0.1)',
+                        borderWidth: 2,
+                        tension: 0.4,
+                        fill: true,
+                        pointRadius: 4,
+                        pointBackgroundColor: '#00CFFF'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: { display: false },
+                        x: { display: false }
+                    }
+                }
+            });
+
+            if (marginChart) marginChart.destroy();
+            marginChart = new Chart(document.getElementById('marginChart'), {
+                type: 'line',
+                data: {
+                    labels: marginLabels.length > 0 ? marginLabels : monthLabels.slice(0, 3),
+                    datasets: [{
+                        label: 'Margin %',
+                        data: activeMargins.length > 0 ? activeMargins : [0],
+                        borderColor: '#FFD13A',
+                        backgroundColor: 'rgba(255, 209, 58, 0.1)',
+                        borderWidth: 2,
+                        tension: 0.4,
+                        fill: true,
+                        pointRadius: 4,
+                        pointBackgroundColor: '#FFD13A'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: { display: false },
+                        x: { display: false }
+                    }
+                }
+            });
+
+            if (goalsChart) goalsChart.destroy();
+            const completed = window.goalsData?.completed || 0;
+            const total = window.goalsData?.total || 27;
+            goalsChart = new Chart(document.getElementById('goalsChart'), {
+                type: 'doughnut',
+                data: {
+                    labels: ['Completed', 'Remaining'],
+                    datasets: [{
+                        data: [completed, total - completed],
+                        backgroundColor: ['#00E887', '#161d35'],
+                        borderColor: '#0f1628',
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } }
+                }
+            });
+        }
+
+        function updateBonusStatus(revenuePct, marginPct, goalsPct) {
+            const status = document.querySelector('.bonus-status');
+            const allMet = revenuePct >= 100 && marginPct >= 100 && goalsPct >= 100;
+
+            if (allMet) {
+                status.innerHTML = '<div class="status-label">Bonus Status</div><div class="status-value unlocked">🔓 UNLOCKED</div>';
+                document.querySelectorAll('.criterion-icon').forEach((el, i) => {
+                    el.className = 'criterion-icon pass';
+                    el.textContent = '✓';
+                });
+            } else {
+                status.innerHTML = '<div class="status-label">Bonus Status</div><div class="status-value locked">🔒 LOCKED</div>';
+                const icons = document.querySelectorAll('.criterion-icon');
+                icons[0].className = revenuePct >= 100 ? 'criterion-icon pass' : 'criterion-icon fail';
+                icons[0].textContent = revenuePct >= 100 ? '✓' : '✕';
+                icons[1].className = marginPct >= 100 ? 'criterion-icon pass' : 'criterion-icon fail';
+                icons[1].textContent = marginPct >= 100 ? '✓' : '✕';
+                icons[2].className = goalsPct >= 100 ? 'criterion-icon pass' : 'criterion-icon fail';
+                icons[2].textContent = goalsPct >= 100 ? '✓' : '✕';
+            }
+        }
+
+        function updateTimestamp() {
+            const now = new Date();
+            const opts = { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true };
+            document.getElementById('updated').textContent = 'Updated ' + now.toLocaleDateString('en-US', opts);
+        }
+
+        fetchData();
+        setInterval(fetchData, 900000);
+    </script>
+</body>
+</html>
