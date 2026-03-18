@@ -143,8 +143,9 @@
         }
         .goals-grid {
             display: grid;
-            grid-template-columns: 1fr 1fr;
+            grid-template-columns: repeat(3, 1fr);
             gap: 20px;
+            grid-column: 1 / -1;
         }
         .goal-card {
             background: var(--surface);
@@ -205,6 +206,7 @@
             margin-top: 20px;
             padding-top: 20px;
             border-top: 1px solid var(--border);
+            grid-column: 1 / -1;
         }
         .nav-dot {
             width: 10px;
@@ -330,9 +332,27 @@
             const completed = goals.filter(g => g.status.includes('Completed')).length;
             const hasData = Object.keys(departmentGoals).length > 0;
 
+            const statusColors = {
+                'Completed': { bg: 'rgba(0,232,135,0.15)', border: 'rgba(0,232,135,0.35)', text: '#00E887' },
+                'On Track':  { bg: 'rgba(0,207,255,0.15)', border: 'rgba(0,207,255,0.35)', text: '#00CFFF' },
+                'At Risk':   { bg: 'rgba(255,209,58,0.15)', border: 'rgba(255,209,58,0.35)', text: '#FFD13A' },
+                'Off Track': { bg: 'rgba(255,68,85,0.15)', border: 'rgba(255,68,85,0.35)', text: '#FF4455' },
+                'AI Risk':   { bg: 'rgba(122,106,138,0.15)', border: 'rgba(122,106,138,0.35)', text: '#9A8AB3' },
+                'Not Started': { bg: 'rgba(255,140,26,0.15)', border: 'rgba(255,140,26,0.35)', text: '#FF8C1A' }
+            };
+            const statusPills = hasData ? goals.map(g => {
+                const key = Object.keys(statusColors).find(k => g.status.includes(k)) || 'Not Started';
+                const c = statusColors[key];
+                const icon = getStatusIcon(g.status);
+                return `<span style="display:inline-flex;align-items:center;gap:5px;padding:5px 12px;border-radius:14px;background:${c.bg};border:1px solid ${c.border};color:${c.text};font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;font-family:'Barlow Condensed',sans-serif;">${icon} Goal ${g.number}: ${g.status}</span>`;
+            }).join('') : '';
+
             let html = `
                 <div class="dept-header">
                     <div class="dept-name-large">${dept}</div>
+                    <div style="flex:1;display:flex;gap:10px;justify-content:center;flex-wrap:wrap;padding:0 20px;">
+                        ${statusPills}
+                    </div>
                     <div class="dept-stats">
                         <div class="dept-stat">
                             <div class="dept-stat-label">Goals Completed</div>
@@ -345,7 +365,7 @@
             html += '<div class="goals-grid">';
             if (!hasData) {
                 html += `<div class="goal-card" style="grid-column:1/-1;align-items:center;justify-content:center;min-height:180px;">
-                    <div class="goal-title" style="color:var(--textdim);text-align:center;font-size:16px;">Connecting to Google Sheets…</div>
+                    <div class="goal-title" style="color:var(--textdim);text-align:center;font-size:16px;">Connecting to Google Sheets\u2026</div>
                     <div style="font-size:12px;color:var(--textdim);margin-top:8px;text-align:center;">Auto-refreshes every 15 minutes</div>
                 </div>`;
             } else {
@@ -420,4 +440,3 @@
     </script>
 </body>
 </html>
-
