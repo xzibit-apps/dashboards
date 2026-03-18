@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=1920, initial-scale=1.0">
+    <title>Xzibit Goals Summary 2025-26</title>
+    <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,400;0,600;0,700;0,800;0,900;1,700&family=Barlow:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --bg: #080c18;
+            --surface: #0f1628;
+            --surface2: #161d35;
+            --border: rgba(255,255,255,0.07);
+            --blue: #00CFFF;
+            --gold: #FFD13A;
+            --green: #00E887;
+            --orange: #FF8C1A;
+            --red: #FF4455;
+            --text: #E8EEFF;
+            --textdim: #7A84A8;
+        }
+        html, body {
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'Barlow', sans-serif;
+        }
+        .dashboard {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 50px;
+            height: 80px;
+            background: linear-gradient(90deg, var(--surface) 0%, rgba(15,22,40,0.8) 100%);
+            border-bottom: 2px solid var(--blue);
+        }
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+        .logo-x {
+            width: 50px;
+            height: 50px;
+            background: var(--blue);
+            color: var(--bg);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Barlow Condensed', sans-serif;
+            font-size: 36px;
+            font-weight: 900;
+            border-radius: 6px;
+        }
+        .header-text h1 {
+            font-family: 'Barlow Condensed', sans-serif;
+            font-size: 28px;
+            font-weight: 900;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+        }
+        .header-text p {
+            font-size: 11px;
+            color: var(--blue);
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+        .header-right { text-align: right; }
+        .season {
+            font-family: 'Barlow Condensed', sans-serif;
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--gold);
+            letter-spacing: 2px;
+        }
+        .updated { font-size: 11px; color: var(--textdim); margin-top: 2px; }
+        .body {
+            flex: 1;
+            padding: 40px 50px;
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 30px;
+            overflow-y: auto;
+        }
+        .card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 25px;
+            display: flex;
+            flex-direction: column;
+        }
+        .card-title {
+            font-family: 'Barlow Condensed', sans-serif;
+            font-size: 16px;
+            font-weight: 700;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: var(--textdim);
+            margin-bottom: 20px;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 15px;
+        }
+        .chart-container {
+            flex: 1;
+            position: relative;
+            height: 300px;
+            margin-bottom: 20px;
+        }
+        .stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+        .stat {
+            background: var(--surface2);
+            padding: 12px;
+            border-radius: 6px;
+            text-align: center;
+        }
+        .stat-label {
+            font-size: 11px;
+            color: var(--textdim);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 4px;
+        }
+        .stat-value {
+            font-family: 'Barlow Condensed', sans-serif;
+            font-size: 24px;
+            font-weight: 900;
+            color: var(--text);
+        }
+        .dept-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+        }
+        .dept-card {
+            background: var(--surface2);
+            padding: 12px;
+            border-radius: 6px;
+            text-align: center;
+            border-left: 3px solid var(--blue);
+        }
+        .dept-name { font-size: 11px; color: var(--textdim); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; }
+        .dept-count { font-family: 'Barlow Condensed', sans-serif; font-size: 18px; font-weight: 900; color: var(--green); }
+        .legend {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid var(--border);
+        }
+        .legend-item { display: flex; align-items: center; gap: 8px; font-size: 12px; }
+        .legend-dot { width: 12px; height: 12px; border-radius: 2px; }
+    </style>
+</head>
+<body>
+    <div class="dashboard">
+        <!-- Header -->
+        <div class="header">
+            <div class="header-left">
+                <div class="logo-x">X</div>
+                <div class="header-text">
+                    <h1>Xzibit</h1>
+                    <p>Imagination Captured</p>
+                </div>
+            </div>
+            <div style="flex: 1; text-align: center;">
+                <h1 style="font-size: 24px; letter-spacing: 3px; text-transform: uppercase; color: var(--textdim);">Goals Summary</h1>
+            </div>
+            <div class="header-right">
+                <div class="season">2025–26</div>
+                <div class="updated" id="updated">Updated now</div>
+            </div>
+        </div>
+
+        <!-- Body -->
+        <div class="body">
+            <!-- Status Breakdown -->
+            <div class="card">
+                <div class="card-title">Status Distribution</div>
+                <div class="chart-container">
+                    <canvas id="statusChart"></canvas>
+                </div>
+                <div class="legend">
+                    <div class="legend-item"><div class="legend-dot" style="background: #00E887;"></div><span>Completed</span></div>
+                    <div class="legend-item"><div class="legend-dot" style="background: #00CFFF;"></div><span>On Track</span></div>
+                    <div class="legend-item"><div class="legend-dot" style="background: #FFD13A;"></div><span>At Risk</span></div>
+                    <div class="legend-item"><div class="legend-dot" style="background: #FF4455;"></div><span>Off Track</span></div>
+                    <div class="legend-item"><div class="legend-dot" style="background: #FF8C1A;"></div><span>Not Started</span></div>
+                    <div class="legend-item"><div class="legend-dot" style="background: #7A6A8A;"></div><span>AI Risk</span></div>
+                </div>
+            </div>
+
+            <!-- Progress -->
+            <div class="card">
+                <div class="card-title">Overall Progress</div>
+                <div class="chart-container">
+                    <canvas id="progressChart"></canvas>
+                </div>
+                <div class="stats">
+                    <div class="stat"><div class="stat-label">Total Goals</div><div class="stat-value" id="total-goals">27</div></div>
+                    <div class="stat"><div class="stat-label">Completed</div><div class="stat-value" style="color: var(--green);" id="completed-count">0</div></div>
+                    <div class="stat"><div class="stat-label">On Track</div><div class="stat-value" style="color: var(--blue);" id="ontrack-count">0</div></div>
+                    <div class="stat"><div class="stat-label">At Risk</div><div class="stat-value" style="color: var(--gold);" id="atrisk-count">0</div></div>
+                </div>
+            </div>
+
+            <!-- Department Breakdown -->
+            <div class="card">
+                <div class="card-title">By Department (3 Goals Each)</div>
+                <div class="dept-grid" id="dept-grid">
+                    <div class="dept-card"><div class="dept-name">AV</div><div class="dept-count" id="dept-AV">0/3</div></div>
+                    <div class="dept-card"><div class="dept-name">Design</div><div class="dept-count" id="dept-Design">0/3</div></div>
+                    <div class="dept-card"><div class="dept-name">Expo</div><div class="dept-count" id="dept-Expo">0/3</div></div>
+                    <div class="dept-card"><div class="dept-name">Finance</div><div class="dept-count" id="dept-Finance">0/3</div></div>
+                    <div class="dept-card"><div class="dept-name">HR</div><div class="dept-count" id="dept-People, Culture &amp; Performance">0/3</div></div>
+                    <div class="dept-card"><div class="dept-name">Permanent</div><div class="dept-count" id="dept-Permanent">0/3</div></div>
+                    <div class="dept-card"><div class="dept-name">Production</div><div class="dept-count" id="dept-Production">0/3</div></div>
+                    <div class="dept-card"><div class="dept-name">Systems</div><div class="dept-count" id="dept-Systems">0/3</div></div>
+                    <div class="dept-card"><div class="dept-name">Warehouse</div><div class="dept-count" id="dept-Warehouse">0/3</div></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const CONFIG = {
+            goalsSheetUrl: 'https://docs.google.com/spreadsheets/d/1VumQnhFi2siIvaWHPZ1LuMdFiqI6ifjS_sHJIAKRi4c/export?format=csv&gid=368453036'
+        };
+
+        let statusChart, progressChart;
+        let statusCounts = {};
+        let deptCounts = {};
+
+        async function fetchData() {
+            try {
+                const goalsData = await fetch(CONFIG.goalsSheetUrl).then(r => r.text());
+                processGoalsData(goalsData);
+                updateDashboard();
+            } catch (error) {
+                console.error('Error fetching data:', error);
+                updateDashboard();
+            }
+        }
+
+        function parseCSVLine(line) {
+            const result = [];
+            let current = '';
+            let inQuotes = false;
+            for (let i = 0; i < line.length; i++) {
+                const char = line[i];
+                if (char === '"') {
+                    if (inQuotes && line[i+1] === '"') { current += '"'; i++; }
+                    else { inQuotes = !inQuotes; }
+                } else if (char === ',' && !inQuotes) {
+                    result.push(current.trim());
+                    current = '';
+                } else {
+                    current += char;
+                }
+            }
+            result.push(current.trim());
+            return result;
+        }
+
+        function processGoalsData(csv) {
+            const lines = csv.split('\n');
+            statusCounts = { 'Completed': 0, 'On Track': 0, 'At Risk': 0, 'Off Track': 0, 'Not Started': 0, 'AI Risk': 0 };
+            deptCounts = {};
+
+            lines.forEach((line, idx) => {
+                if (idx > 0 && line.trim()) {
+                    const cols = parseCSVLine(line);
+                    const dept = cols[0].trim();
+                    const status = cols[2].trim() || 'Not Started';
+
+                    if (!deptCounts[dept]) deptCounts[dept] = 0;
+
+                    if (status.includes('Completed')) { statusCounts['Completed']++; deptCounts[dept]++; }
+                    else if (status.includes('On Track')) { statusCounts['On Track']++; }
+                    else if (status.includes('At Risk')) { statusCounts['At Risk']++; }
+                    else if (status.includes('Off Track')) { statusCounts['Off Track']++; }
+                    else if (status.includes('AI Risk')) { statusCounts['AI Risk']++; }
+                    else { statusCounts['Not Started']++; }
+                }
+            });
+        }
+
+        function updateDashboard() {
+            const total = 27;
+            const completed = statusCounts['Completed'] || 0;
+            const ontrack = statusCounts['On Track'] || 0;
+            const atrisk = statusCounts['At Risk'] || 0;
+
+            document.getElementById('completed-count').textContent = completed;
+            document.getElementById('ontrack-count').textContent = ontrack;
+            document.getElementById('atrisk-count').textContent = atrisk;
+
+            Object.keys(deptCounts).forEach(dept => {
+                const el = document.getElementById('dept-' + dept);
+                if (el) {
+                    el.textContent = deptCounts[dept] + '/3';
+                    el.style.color = deptCounts[dept] >= 2 ? '#00E887' : deptCounts[dept] === 1 ? '#00CFFF' : '#FF8C1A';
+                }
+            });
+
+            updateCharts();
+            updateTimestamp();
+        }
+
+        function updateCharts() {
+            const statusData = [
+                statusCounts['Completed'] || 0,
+                statusCounts['On Track'] || 0,
+                statusCounts['At Risk'] || 0,
+                statusCounts['Off Track'] || 0,
+                statusCounts['Not Started'] || 0,
+                statusCounts['AI Risk'] || 0
+            ];
+
+            if (statusChart) statusChart.destroy();
+            statusChart = new Chart(document.getElementById('statusChart'), {
+                type: 'doughnut',
+                data: {
+                    labels: ['Completed', 'On Track', 'At Risk', 'Off Track', 'Not Started', 'AI Risk'],
+                    datasets: [{
+                        data: statusData,
+                        backgroundColor: ['#00E887','#00CFFF','#FFD13A','#FF4455','#FF8C1A','#7A6A8A'],
+                        borderColor: '#0f1628',
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } }
+                }
+            });
+
+            const completed = statusCounts['Completed'] || 0;
+            const remaining = 27 - completed;
+
+            if (progressChart) progressChart.destroy();
+            progressChart = new Chart(document.getElementById('progressChart'), {
+                type: 'bar',
+                data: {
+                    labels: ['Completed', 'In Progress'],
+                    datasets: [{
+                        label: 'Goals',
+                        data: [completed, remaining],
+                        backgroundColor: ['#00E887', '#161d35'],
+                        borderColor: ['#00E887', '#7A84A8'],
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: { x: { max: 27 } }
+                }
+            });
+        }
+
+        function updateTimestamp() {
+            const now = new Date();
+            const opts = { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true };
+            document.getElementById('updated').textContent = 'Updated ' + now.toLocaleDateString('en-US', opts);
+        }
+
+        fetchData();
+        setInterval(fetchData, 900000);
+    </script>
+</body>
+</html>
