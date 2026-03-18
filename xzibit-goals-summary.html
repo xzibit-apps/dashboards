@@ -125,7 +125,7 @@
         }
         .stats {
             display: grid;
-            grid-template-columns: 1fr 1fr;
+            grid-template-columns: repeat(5, 1fr);
             gap: 12px;
         }
         .stat {
@@ -251,7 +251,7 @@
 
             <!-- Progress -->
             <div class="card">
-                <div class="card-title">Overall Progress</div>
+                <div class="card-title">Goals by Status</div>
                 <div class="chart-container">
                     <canvas id="progressChart"></canvas>
                 </div>
@@ -271,6 +271,10 @@
                     <div class="stat">
                         <div class="stat-label">At Risk</div>
                         <div class="stat-value" style="color: var(--gold);" id="atrisk-count">0</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-label">Off Track</div>
+                        <div class="stat-value" style="color: var(--red);" id="offtrack-count">0</div>
                     </div>
                 </div>
             </div>
@@ -406,10 +410,12 @@
             const completed = statusCounts['Completed'] || 0;
             const ontrack = statusCounts['On Track'] || 0;
             const atrisk = statusCounts['At Risk'] || 0;
+            const offtrack = statusCounts['Off Track'] || 0;
 
             document.getElementById('completed-count').textContent = completed;
             document.getElementById('ontrack-count').textContent = ontrack;
             document.getElementById('atrisk-count').textContent = atrisk;
+            document.getElementById('offtrack-count').textContent = offtrack;
 
             Object.keys(deptCounts).forEach(dept => {
                 const el = document.getElementById(`dept-${dept}`);
@@ -422,6 +428,31 @@
             updateCharts();
             updateTimestamp();
         }
+
+        // Plugin: draw completion % in center of doughnut
+        const centerTextPlugin = {
+            id: 'centerText',
+            afterDraw(chart) {
+                if (chart.canvas.id !== 'statusChart') return;
+                const { ctx, chartArea } = chart;
+                if (!chartArea) return;
+                const cx = (chartArea.left + chartArea.right) / 2;
+                const cy = (chartArea.top + chartArea.bottom) / 2;
+                const pct = Math.round(((statusCounts['Completed'] || 0) / 27) * 100);
+                ctx.save();
+                ctx.font = '900 30px "Barlow Condensed", sans-serif';
+                ctx.fillStyle = '#E8EEFF';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(pct + '%', cx, cy - 9);
+                ctx.font = '400 10px Barlow, sans-serif';
+                ctx.fillStyle = '#7A84A8';
+                ctx.letterSpacing = '1px';
+                ctx.fillText('COMPLETE', cx, cy + 12);
+                ctx.restore();
+            }
+        };
+        Chart.register(centerTextPlugin);
 
         function updateCharts() {
             const statusData = [
@@ -440,14 +471,7 @@
                     labels: ['Completed', 'On Track', 'At Risk', 'Off Track', 'Not Started', 'AI Risk'],
                     datasets: [{
                         data: statusData,
-                        backgroundColor: [
-                            '#00E887',
-                            '#00CFFF',
-                            '#FFD13A',
-                            '#FF4455',
-                            '#FF8C1A',
-                            '#7A6A8A'
-                        ],
+                        backgroundColor: ['#00E887','#00CFFF','#FFD13A','#FF4455','#FF8C1A','#7A6A8A'],
                         borderColor: '#0f1628',
                         borderWidth: 2
                     }]
@@ -455,33 +479,39 @@
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
+                    cutout: '68%',
                     plugins: { legend: { display: false } }
                 }
             });
-
-            const completed = statusCounts['Completed'] || 0;
-            const remaining = 27 - completed;
 
             if (progressChart) progressChart.destroy();
             progressChart = new Chart(document.getElementById('progressChart'), {
                 type: 'bar',
                 data: {
-                    labels: ['Completed', 'In Progress'],
-                    datasets: [{
-                        label: 'Goals',
-                        data: [completed, remaining],
-                        backgroundColor: ['#00E887', '#161d35'],
-                        borderColor: ['#00E887', '#7A84A8'],
-                        borderWidth: 2
-                    }]
+                    labels: [''],
+                    datasets: [
+                        { label: 'Completed', data: [statusCounts['Completed'] || 0], backgroundColor: '#00E887', borderRadius: 3 },
+                        { label: 'On Track',  data: [statusCounts['On Track']  || 0], backgroundColor: '#00CFFF', borderRadius: 3 },
+                        { label: 'At Risk',   data: [statusCounts['At Risk']   || 0], backgroundColor: '#FFD13A', borderRadius: 3 },
+                        { label: 'Off Track', data: [statusCounts['Off Track'] || 0], backgroundColor: '#FF4455', borderRadius: 3 },
+                        { label: 'Not Started', data: [statusCounts['Not Started'] || 0], backgroundColor: '#FF8C1A', borderRadius: 3 },
+                        { label: 'AI Risk',   data: [statusCounts['AI Risk']   || 0], backgroundColor: '#7A6A8A', borderRadius: 3 }
+                    ]
                 },
                 options: {
                     indexAxis: 'y',
                     responsive: true,
                     maintainAspectRatio: false,
-                    plugins: { legend: { display: false } },
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'bottom',
+                            labels: { color: '#7A84A8', font: { size: 10 }, boxWidth: 12, padding: 10 }
+                        }
+                    },
                     scales: {
-                        x: { max: 27 }
+                        x: { stacked: true, max: 27, display: false },
+                        y: { stacked: true, display: false }
                     }
                 }
             });
@@ -498,4 +528,3 @@
     </script>
 </body>
 </html>
-
