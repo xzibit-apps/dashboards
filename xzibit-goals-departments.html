@@ -8,17 +8,10 @@
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         :root {
-            --bg: #080c18;
-            --surface: #0f1628;
-            --surface2: #161d35;
-            --border: rgba(255,255,255,0.07);
-            --blue: #00CFFF;
-            --gold: #FFD13A;
-            --green: #00E887;
-            --orange: #FF8C1A;
-            --red: #FF4455;
-            --text: #E8EEFF;
-            --textdim: #7A84A8;
+            --bg: #080c18; --surface: #0f1628; --surface2: #161d35;
+            --border: rgba(255,255,255,0.07); --blue: #00CFFF; --gold: #FFD13A;
+            --green: #00E887; --orange: #FF8C1A; --red: #FF4455;
+            --text: #E8EEFF; --textdim: #7A84A8;
         }
         html, body { width: 100vw; height: 100vh; overflow: hidden; background: var(--bg); color: var(--text); font-family: 'Barlow', sans-serif; }
         .dashboard { width: 100%; height: 100%; display: flex; flex-direction: column; }
@@ -61,29 +54,16 @@
         <div class="header">
             <div class="header-left">
                 <div class="logo-x">X</div>
-                <div class="header-text">
-                    <h1>Xzibit</h1>
-                    <p>Imagination Captured</p>
-                </div>
+                <div class="header-text"><h1>Xzibit</h1><p>Imagination Captured</p></div>
             </div>
-            <div style="flex: 1; text-align: center;">
-                <h1 style="font-size: 24px; letter-spacing: 3px; text-transform: uppercase; color: var(--textdim);">Department Goals</h1>
-            </div>
-            <div class="header-right">
-                <div class="season">2025–26</div>
-                <div class="updated" id="updated">Updated now</div>
-            </div>
+            <div style="flex:1;text-align:center;"><h1 style="font-size:24px;letter-spacing:3px;text-transform:uppercase;color:var(--textdim);">Department Goals</h1></div>
+            <div class="header-right"><div class="season">2025–26</div><div class="updated" id="updated">Updated now</div></div>
         </div>
-        <div class="body">
-            <div class="dept-container" id="deptContainer"></div>
-        </div>
+        <div class="body"><div class="dept-container" id="deptContainer"></div></div>
     </div>
 
     <script>
-        const CONFIG = {
-            goalsSheetUrl: 'https://docs.google.com/spreadsheets/d/1VumQnhFi2siIvaWHPZ1LuMdFiqI6ifjS_sHJIAKRi4c/export?format=csv&gid=368453036'
-        };
-
+        const CONFIG = { goalsSheetUrl: 'https://docs.google.com/spreadsheets/d/1VumQnhFi2siIvaWHPZ1LuMdFiqI6ifjS_sHJIAKRi4c/export?format=csv&gid=368453036' };
         const DEPARTMENTS = ['AV', 'Design', 'Expo', 'Finance', 'People, Culture & Performance', 'Permanent', 'Production', 'Systems', 'Warehouse'];
         let departmentGoals = {};
         let currentDeptIndex = 0;
@@ -96,42 +76,31 @@
                 startCarousel();
             } catch (error) {
                 console.error('Error fetching data:', error);
+                renderDashboard();
+                if (!window.carouselInterval) startCarousel();
             }
         }
 
         function parseCSVLine(line) {
-            const result = [];
-            let current = '';
-            let inQuotes = false;
+            const result = []; let current = ''; let inQuotes = false;
             for (let i = 0; i < line.length; i++) {
                 const char = line[i];
                 if (char === '"') {
-                    if (inQuotes && line[i+1] === '"') { current += '"'; i++; }
-                    else { inQuotes = !inQuotes; }
-                } else if (char === ',' && !inQuotes) {
-                    result.push(current.trim());
-                    current = '';
-                } else {
-                    current += char;
-                }
+                    if (inQuotes && line[i+1] === '"') { current += '"'; i++; } else { inQuotes = !inQuotes; }
+                } else if (char === ',' && !inQuotes) { result.push(current.trim()); current = ''; }
+                else { current += char; }
             }
-            result.push(current.trim());
-            return result;
+            result.push(current.trim()); return result;
         }
 
         function parseGoalsData(csv) {
-            const lines = csv.split('\n');
-            departmentGoals = {};
+            const lines = csv.split('\n'); departmentGoals = {};
             lines.forEach((line, idx) => {
                 if (idx > 0 && line.trim()) {
                     const cols = parseCSVLine(line);
-                    const dept = cols[0].trim();
-                    const goal = cols[1].trim();
-                    const status = cols[2].trim() || 'Not Started';
+                    const dept = cols[0].trim(); const goal = cols[1].trim(); const status = cols[2].trim() || 'Not Started';
                     if (!departmentGoals[dept]) departmentGoals[dept] = [];
-                    if (departmentGoals[dept].length < 3) {
-                        departmentGoals[dept].push({ title: goal, status: status, number: departmentGoals[dept].length + 1 });
-                    }
+                    if (departmentGoals[dept].length < 3) departmentGoals[dept].push({ title: goal, status: status, number: departmentGoals[dept].length + 1 });
                 }
             });
         }
@@ -141,66 +110,54 @@
             const dept = DEPARTMENTS[currentDeptIndex];
             const goals = departmentGoals[dept] || [];
             const completed = goals.filter(g => g.status.includes('Completed')).length;
+            const hasData = Object.keys(departmentGoals).length > 0;
 
-            let html = '<div class="dept-header"><div class="dept-name-large">' + dept + '</div><div class="dept-stats"><div class="dept-stat"><div class="dept-stat-label">Goals Completed</div><div class="dept-stat-value">' + completed + '/3</div></div></div></div>';
+            let html = '<div class="dept-header"><div class="dept-name-large">' + dept + '</div><div class="dept-stats"><div class="dept-stat"><div class="dept-stat-label">Goals Completed</div><div class="dept-stat-value">' + (hasData ? completed + '/3' : '—') + '</div></div></div></div>';
 
             html += '<div class="goals-grid">';
-            goals.forEach(goal => {
-                const statusClass = getStatusClass(goal.status);
-                const statusIcon = getStatusIcon(goal.status);
-                html += '<div class="goal-card transition-enter"><div class="goal-number">Goal ' + goal.number + '</div><div class="goal-title">' + goal.title + '</div><div class="goal-status ' + statusClass + '">' + statusIcon + ' ' + goal.status + '</div></div>';
-            });
+            if (!hasData) {
+                html += '<div class="goal-card" style="grid-column:1/-1;align-items:center;justify-content:center;min-height:180px;"><div class="goal-title" style="color:var(--textdim);text-align:center;font-size:16px;">Connecting to Google Sheets…</div><div style="font-size:12px;color:var(--textdim);margin-top:8px;text-align:center;">Auto-refreshes every 15 minutes</div></div>';
+            } else {
+                goals.forEach(goal => {
+                    html += '<div class="goal-card transition-enter"><div class="goal-number">Goal ' + goal.number + '</div><div class="goal-title">' + goal.title + '</div><div class="goal-status ' + getStatusClass(goal.status) + '">' + getStatusIcon(goal.status) + ' ' + goal.status + '</div></div>';
+                });
+            }
             html += '</div>';
-
             html += '<div class="navigation">';
-            DEPARTMENTS.forEach((d, idx) => {
-                const activeClass = idx === currentDeptIndex ? 'active' : '';
-                html += '<div class="nav-dot ' + activeClass + '" onclick="goToDepartment(' + idx + ')"></div>';
-            });
+            DEPARTMENTS.forEach((d, idx) => { html += '<div class="nav-dot ' + (idx === currentDeptIndex ? 'active' : '') + '" onclick="goToDepartment(' + idx + ')"></div>'; });
             html += '</div>';
-
             container.innerHTML = html;
             updateTimestamp();
         }
 
-        function getStatusClass(status) {
-            if (status.includes('Completed')) return 'status-completed';
-            if (status.includes('On Track')) return 'status-ontrack';
-            if (status.includes('At Risk')) return 'status-atrisk';
-            if (status.includes('Off Track')) return 'status-offtrack';
-            if (status.includes('AI Risk')) return 'status-airisk';
+        function getStatusClass(s) {
+            if (s.includes('Completed')) return 'status-completed';
+            if (s.includes('On Track')) return 'status-ontrack';
+            if (s.includes('At Risk')) return 'status-atrisk';
+            if (s.includes('Off Track')) return 'status-offtrack';
+            if (s.includes('AI Risk')) return 'status-airisk';
             return 'status-notstarted';
         }
-
-        function getStatusIcon(status) {
-            if (status.includes('Completed')) return '✓';
-            if (status.includes('On Track')) return '→';
-            if (status.includes('At Risk')) return '⚠';
-            if (status.includes('Off Track')) return '✕';
-            if (status.includes('AI Risk')) return '!';
+        function getStatusIcon(s) {
+            if (s.includes('Completed')) return '✓';
+            if (s.includes('On Track')) return '→';
+            if (s.includes('At Risk')) return '⚠';
+            if (s.includes('Off Track')) return '✕';
+            if (s.includes('AI Risk')) return '!';
             return '◯';
         }
-
         function goToDepartment(idx) {
-            currentDeptIndex = idx;
-            renderDashboard();
-            clearInterval(window.carouselInterval);
-            startCarousel();
+            currentDeptIndex = idx; renderDashboard();
+            clearInterval(window.carouselInterval); startCarousel();
         }
-
         function startCarousel() {
-            window.carouselInterval = setInterval(() => {
-                currentDeptIndex = (currentDeptIndex + 1) % DEPARTMENTS.length;
-                renderDashboard();
-            }, 10000);
+            window.carouselInterval = setInterval(() => { currentDeptIndex = (currentDeptIndex + 1) % DEPARTMENTS.length; renderDashboard(); }, 10000);
         }
-
         function updateTimestamp() {
             const now = new Date();
             const opts = { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true };
             document.getElementById('updated').textContent = 'Updated ' + now.toLocaleDateString('en-US', opts);
         }
-
         fetchData();
         setInterval(() => { fetchData(); }, 900000);
     </script>
