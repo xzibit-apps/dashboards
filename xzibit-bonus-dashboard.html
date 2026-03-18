@@ -355,6 +355,8 @@
             goalsSheetUrl: 'https://docs.google.com/spreadsheets/d/1VumQnhFi2siIvaWHPZ1LuMdFiqI6ifjS_sHJIAKRi4c/export?format=csv&gid=368453036'
         };
 
+        const DEPT_NAMES = ['AV', 'Design', 'Expo', 'Finance', 'People, Culture & Performance', 'Permanent', 'Production', 'Systems', 'Warehouse'];
+
         let revenueChart, marginChart, goalsChart;
 
         async function fetchData() {
@@ -430,13 +432,15 @@
 
         function processGoalsData(csv) {
             const lines = csv.split('\n');
-            window.goalsData = { completed: 0, total: 0 };
+            window.goalsData = { completed: 0, total: 27 };
 
             lines.forEach((line, idx) => {
                 if (idx > 0 && line.trim()) {
-                    window.goalsData.total++;
                     const cols = parseCSVLine(line);
-                    if (cols[2] && cols[2].includes('Completed')) {
+                    const dept = cols[0] ? cols[0].trim() : '';
+                    // Only count real department rows, skip summary/footer rows
+                    if (!DEPT_NAMES.includes(dept)) return;
+                    if (cols[5] && cols[5].includes('Completed')) {
                         window.goalsData.completed++;
                     }
                 }
@@ -480,40 +484,120 @@
             updateTimestamp();
         }
 
+        // Plugin: dashed horizontal target line for line charts
+        const targetLinePlugin = {
+            id: 'targetLine',
+            afterDraw(chart) {
+                const target = chart.options.plugins.targetLine;
+                if (!target || !target.value) return;
+                const { ctx, chartArea, scales } = chart;
+                if (!scales.y || !chartArea) return;
+                const yPos = scales.y.getPixelForValue(target.value);
+                if (yPos < chartArea.top || yPos > chartArea.bottom) return;
+                ctx.save();
+                ctx.beginPath();
+                ctx.moveTo(chartArea.left, yPos);
+                ctx.lineTo(chartArea.right, yPos);
+                ctx.strokeStyle = target.color || 'rgba(255,255,255,0.4)';
+                ctx.lineWidth = 1.5;
+                ctx.setLineDash([5, 4]);
+                ctx.stroke();
+                ctx.setLineDash([]);
+                ctx.font = '700 9px "Barlow Condensed", sans-serif';
+                ctx.fillStyle = target.color || 'rgba(255,255,255,0.4)';
+                ctx.textAlign = 'right';
+                ctx.fillText('TARGET', chartArea.right - 2, yPos - 4);
+                ctx.restore();
+            }
+        };
+        Chart.register(targetLinePlugin);
+
+        // Plugin: target marker on horizontal bar (goals chart)
+        const goalsTargetPlugin = {
+            id: 'goalsTarget',
+            afterDraw(chart) {
+                if (chart.canvas.id !== 'goalsChart') return;
+                const { ctx, chartArea, scales } = chart;
+                if (!scales.x || !chartArea) return;
+                const xPos = scales.x.getPixelForValue(13.5); // 50% of 27
+                ctx.save();
+                ctx.beginPath();
+                ctx.moveTo(xPos, chartArea.top - 6);
+                ctx.lineTo(xPos, chartArea.bottom + 6);
+                ctx.strokeStyle = '#FFD13A';
+                ctx.lineWidth = 2;
+                ctx.setLineDash([5, 4]);
+                ctx.stroke();
+                ctx.setLineDash([]);
+                ctx.font = '700 9px "Barlow Condensed", sans-serif';
+                ctx.fillStyle = '#FFD13A';
+                ctx.textAlign = 'center';
+                ctx.fillText('50% TARGET', xPos, chartArea.top - 9);
+                ctx.restore();
+            }
+        };
+        Chart.register(goalsTargetPlugin);
+
         function updateCharts() {
             const monthLabels = ['Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
             const allRevenues = window.financialData?.monthlyRevenue || [];
             const allMargins = window.financialData?.margins || [];
-            // Only chart months with data
             const activeRevenues = allRevenues.filter(v => v > 0);
             const activeMargins = allMargins.filter(v => v > 0);
             const revenueLabels = monthLabels.slice(0, activeRevenues.length);
             const marginLabels = monthLabels.slice(0, activeMargins.length);
+            const monthlyTarget = 10342000 / 12;
+            const marginTarget = 31.66;
 
             if (revenueChart) revenueChart.destroy();
             revenueChart = new Chart(document.getElementById('revenueChart'), {
                 type: 'line',
                 data: {
                     labels: revenueLabels.length > 0 ? revenueLabels : monthLabels.slice(0, 3),
-                    datasets: [{
-                        label: 'Revenue',
-                        data: activeRevenues.length > 0 ? activeRevenues : [0],
-                        borderColor: '#00CFFF',
-                        backgroundColor: 'rgba(0, 207, 255, 0.1)',
-                        borderWidth: 2,
-                        tension: 0.4,
-                        fill: true,
-                        pointRadius: 4,
-                        pointBackgroundColor: '#00CFFF'
-                    }]
+                    datasets: [
+                        {
+                            label: 'Revenue',
+                            data: activeRevenues.length > 0 ? activeRevenues : [0],
+                            borderColor: '#00CFFF',
+                            backgroundColor: 'rgba(0, 207, 255, 0.1)',
+                            borderWidth: 2,
+                            tension: 0.4,
+                            fill: true,
+                            pointRadius: 4,
+                            pointBackgroundColor: '#00CFFF',
+                            order: 1
+                        },
+                        {
+                            label: 'Monthly Target',
+                            data: Array(Math.max(revenueLabels.length, 3)).fill(monthlyTarget),
+                            borderColor: 'rgba(0, 207, 255, 0.35)',
+                            borderWidth: 1.5,
+                            borderDash: [5, 4],
+                            pointRadius: 0,
+                            fill: false,
+                            tension: 0,
+                            order: 2
+                        }
+                    ]
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
-                    plugins: { legend: { display: false } },
+                    plugins: {
+                        legend: { display: false },
+                        targetLine: { value: null }
+                    },
                     scales: {
-                        y: { display: false },
-                        x: { display: false }
+                        y: {
+                            display: true,
+                            grid: { color: 'rgba(255,255,255,0.04)' },
+                            ticks: { color: '#7A84A8', font: { size: 9 }, callback: v => '$' + (v/1000000).toFixed(1) + 'M', maxTicksLimit: 4 }
+                        },
+                        x: {
+                            display: true,
+                            grid: { display: false },
+                            ticks: { color: '#7A84A8', font: { size: 9 } }
+                        }
                     }
                 }
             });
@@ -523,25 +607,50 @@
                 type: 'line',
                 data: {
                     labels: marginLabels.length > 0 ? marginLabels : monthLabels.slice(0, 3),
-                    datasets: [{
-                        label: 'Margin %',
-                        data: activeMargins.length > 0 ? activeMargins : [0],
-                        borderColor: '#FFD13A',
-                        backgroundColor: 'rgba(255, 209, 58, 0.1)',
-                        borderWidth: 2,
-                        tension: 0.4,
-                        fill: true,
-                        pointRadius: 4,
-                        pointBackgroundColor: '#FFD13A'
-                    }]
+                    datasets: [
+                        {
+                            label: 'Margin %',
+                            data: activeMargins.length > 0 ? activeMargins : [0],
+                            borderColor: '#FFD13A',
+                            backgroundColor: 'rgba(255, 209, 58, 0.1)',
+                            borderWidth: 2,
+                            tension: 0.4,
+                            fill: true,
+                            pointRadius: 4,
+                            pointBackgroundColor: '#FFD13A',
+                            order: 1
+                        },
+                        {
+                            label: 'Margin Target',
+                            data: Array(Math.max(marginLabels.length, 3)).fill(marginTarget),
+                            borderColor: 'rgba(255, 209, 58, 0.35)',
+                            borderWidth: 1.5,
+                            borderDash: [5, 4],
+                            pointRadius: 0,
+                            fill: false,
+                            tension: 0,
+                            order: 2
+                        }
+                    ]
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
-                    plugins: { legend: { display: false } },
+                    plugins: {
+                        legend: { display: false },
+                        targetLine: { value: null }
+                    },
                     scales: {
-                        y: { display: false },
-                        x: { display: false }
+                        y: {
+                            display: true,
+                            grid: { color: 'rgba(255,255,255,0.04)' },
+                            ticks: { color: '#7A84A8', font: { size: 9 }, callback: v => v.toFixed(0) + '%', maxTicksLimit: 4 }
+                        },
+                        x: {
+                            display: true,
+                            grid: { display: false },
+                            ticks: { color: '#7A84A8', font: { size: 9 } }
+                        }
                     }
                 }
             });
@@ -550,20 +659,44 @@
             const completed = window.goalsData?.completed || 0;
             const total = window.goalsData?.total || 27;
             goalsChart = new Chart(document.getElementById('goalsChart'), {
-                type: 'doughnut',
+                type: 'bar',
+                plugins: [goalsTargetPlugin],
                 data: {
-                    labels: ['Completed', 'Remaining'],
-                    datasets: [{
-                        data: [completed, total - completed],
-                        backgroundColor: ['#00E887', '#161d35'],
-                        borderColor: '#0f1628',
-                        borderWidth: 2
-                    }]
+                    labels: [''],
+                    datasets: [
+                        {
+                            label: 'Completed',
+                            data: [completed],
+                            backgroundColor: '#00E887',
+                            borderRadius: 4
+                        },
+                        {
+                            label: 'Remaining',
+                            data: [total - completed],
+                            backgroundColor: '#161d35',
+                            borderRadius: 4
+                        }
+                    ]
                 },
                 options: {
+                    indexAxis: 'y',
                     responsive: true,
                     maintainAspectRatio: false,
-                    plugins: { legend: { display: false } }
+                    plugins: {
+                        legend: { display: false },
+                        goalsTarget: true
+                    },
+                    scales: {
+                        x: {
+                            stacked: true,
+                            max: 27,
+                            display: true,
+                            grid: { color: 'rgba(255,255,255,0.04)' },
+                            ticks: { color: '#7A84A8', font: { size: 9 }, stepSize: 5 }
+                        },
+                        y: { stacked: true, display: false }
+                    },
+                    layout: { padding: { top: 18 } }
                 }
             });
         }
