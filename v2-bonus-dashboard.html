@@ -1,0 +1,808 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=1920, initial-scale=1.0">
+    <title>Xzibit Bonus Dashboard 2025-26</title>
+    <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800;900&family=Barlow:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --bg:       #05080f;
+            --surface:  #0c1222;
+            --surface2: #111827;
+            --border:   rgba(255,255,255,0.08);
+            --blue:     #00CFFF;
+            --gold:     #FFD13A;
+            --green:    #00E887;
+            --orange:   #FF8C1A;
+            --red:      #FF4455;
+            --text:     #FFFFFF;
+            --dim:      #8896B0;
+        }
+        html, body {
+            width: 100vw; height: 100vh;
+            overflow: hidden;
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'Barlow', sans-serif;
+        }
+        .dashboard { width: 100%; height: 100%; display: flex; flex-direction: column; }
+
+        /* ââ TOP BANNER ââ */
+        .bonus-banner {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 48px;
+            height: 88px;
+            background: var(--surface);
+            border-bottom: 3px solid var(--border);
+            flex-shrink: 0;
+        }
+        .banner-left {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+        .logo-x {
+            width: 52px; height: 52px;
+            background: var(--blue);
+            color: #000;
+            display: flex; align-items: center; justify-content: center;
+            font-family: 'Barlow Condensed', sans-serif;
+            font-size: 34px; font-weight: 900;
+            border-radius: 6px;
+            flex-shrink: 0;
+        }
+        .banner-headline {
+            font-family: 'Barlow Condensed', sans-serif;
+            font-size: 36px;
+            font-weight: 900;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            line-height: 1;
+        }
+        .banner-sub {
+            font-size: 12px;
+            color: var(--dim);
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin-top: 3px;
+        }
+        .banner-status {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+        .status-pill {
+            font-family: 'Barlow Condensed', sans-serif;
+            font-size: 22px;
+            font-weight: 900;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            padding: 8px 28px;
+            border-radius: 6px;
+        }
+        .status-pill.unlocked { background: rgba(0,232,135,0.15); color: var(--green); border: 2px solid var(--green); }
+        .status-pill.at-risk  { background: rgba(255,209,58,0.15);  color: var(--gold);  border: 2px solid var(--gold); }
+        .status-pill.locked   { background: rgba(255,68,85,0.15);   color: var(--red);   border: 2px solid var(--red); }
+        .banner-right { text-align: right; }
+        .season { font-family: 'Barlow Condensed', sans-serif; font-size: 22px; font-weight: 700; color: var(--gold); letter-spacing: 2px; }
+        .updated { font-size: 11px; color: var(--dim); margin-top: 3px; }
+
+        /* ââ 3-COLUMN MAIN ââ */
+        .main-grid {
+            flex: 1;
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 0;
+            overflow: hidden;
+        }
+        .col {
+            display: flex;
+            flex-direction: column;
+            padding: 28px 36px;
+            border-right: 1px solid var(--border);
+            overflow: hidden;
+        }
+        .col:last-child { border-right: none; }
+
+        /* Column accent top bar */
+        .col-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            padding-bottom: 16px;
+            border-bottom: 2px solid var(--border);
+        }
+        .col-label {
+            font-family: 'Barlow Condensed', sans-serif;
+            font-size: 15px;
+            font-weight: 700;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            color: var(--dim);
+        }
+        .col-badge {
+            font-family: 'Barlow Condensed', sans-serif;
+            font-size: 13px;
+            font-weight: 700;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            padding: 4px 14px;
+            border-radius: 4px;
+        }
+        .col-badge.pass  { background: rgba(0,232,135,0.12); color: var(--green); border: 1px solid rgba(0,232,135,0.3); }
+        .col-badge.fail  { background: rgba(255,68,85,0.12);  color: var(--red);   border: 1px solid rgba(255,68,85,0.3); }
+        .col-badge.warn  { background: rgba(255,209,58,0.12); color: var(--gold);  border: 1px solid rgba(255,209,58,0.3); }
+
+        /* Big number */
+        .big-number {
+            font-family: 'Barlow Condensed', sans-serif;
+            font-size: 72px;
+            font-weight: 900;
+            line-height: 1;
+            margin-bottom: 4px;
+        }
+        .big-number.blue  { color: var(--blue); }
+        .big-number.gold  { color: var(--gold); }
+        .big-number.green { color: var(--green); }
+
+        .metric-target {
+            font-size: 14px;
+            color: var(--dim);
+            margin-bottom: 6px;
+        }
+        .metric-variance {
+            font-family: 'Barlow Condensed', sans-serif;
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+        .metric-variance.pos { color: var(--green); }
+        .metric-variance.neg { color: var(--red); }
+        .metric-interp {
+            font-size: 14px;
+            color: var(--dim);
+            margin-bottom: 20px;
+        }
+
+        /* Progress bar */
+        .progress-wrap { margin-bottom: 6px; }
+        .progress-label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+            color: var(--dim);
+            margin-bottom: 6px;
+        }
+        .progress-track {
+            height: 14px;
+            background: var(--surface2);
+            border-radius: 4px;
+            overflow: hidden;
+            position: relative;
+        }
+        .progress-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 1.5s ease;
+        }
+        .progress-fill.blue  { background: linear-gradient(90deg, #0090cc, var(--blue)); }
+        .progress-fill.gold  { background: linear-gradient(90deg, #b89000, var(--gold)); }
+        .progress-fill.green { background: linear-gradient(90deg, #00a85a, var(--green)); }
+
+        /* Target marker on progress bar */
+        .progress-marker {
+            position: relative;
+            height: 8px;
+            margin-top: 4px;
+        }
+        .target-tick {
+            position: absolute;
+            width: 2px;
+            height: 12px;
+            background: var(--gold);
+            top: -4px;
+        }
+        .target-tick-label {
+            position: absolute;
+            font-size: 10px;
+            color: var(--gold);
+            top: 10px;
+            transform: translateX(-50%);
+            white-space: nowrap;
+            font-family: 'Barlow Condensed', sans-serif;
+            font-weight: 700;
+        }
+
+        /* Chart */
+        .chart-area {
+            flex: 1;
+            position: relative;
+            min-height: 0;
+        }
+
+        /* ââ BOTTOM CHECKLIST ââ */
+        .checklist-bar {
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            gap: 0;
+            background: var(--surface);
+            border-top: 2px solid var(--border);
+            height: 78px;
+        }
+        .checklist-title {
+            padding: 0 32px;
+            font-family: 'Barlow Condensed', sans-serif;
+            font-size: 13px;
+            font-weight: 700;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            color: var(--dim);
+            white-space: nowrap;
+            border-right: 1px solid var(--border);
+            height: 100%;
+            display: flex;
+            align-items: center;
+        }
+        .checklist-items {
+            display: flex;
+            flex: 1;
+            height: 100%;
+        }
+        .check-item {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 0 32px;
+            border-right: 1px solid var(--border);
+        }
+        .check-item:last-child { border-right: none; }
+        .check-icon {
+            width: 36px; height: 36px;
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 18px;
+            font-weight: 900;
+            flex-shrink: 0;
+        }
+        .check-icon.pass { background: var(--green); color: #000; }
+        .check-icon.fail { background: rgba(255,68,85,0.15); color: var(--red); border: 2px solid var(--red); }
+        .check-text { font-size: 15px; font-weight: 500; }
+        .check-note { font-size: 12px; color: var(--dim); margin-top: 2px; }
+
+        /* Stacked bar (goals column) */
+        .stacked-container { position: relative; flex: 1; min-height: 0; }
+        .stack-label-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px 16px;
+            margin-top: 10px;
+        }
+        .stack-label {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 12px;
+            color: var(--dim);
+        }
+        .stack-dot {
+            width: 10px; height: 10px;
+            border-radius: 2px;
+            flex-shrink: 0;
+        }
+    </style>
+</head>
+<body>
+<div class="dashboard">
+
+    <!-- TOP BANNER -->
+    <div class="bonus-banner">
+        <div class="banner-left">
+            <div class="logo-x">X</div>
+            <div>
+                <div class="banner-headline" id="banner-headline">BONUS STATUS: â OF 3 METRICS MET</div>
+                <div class="banner-sub">XZIBIT Â· 2025â26 FINANCIAL YEAR</div>
+            </div>
+        </div>
+        <div class="banner-status">
+            <div class="status-pill at-risk" id="bonus-pill">â³ LOADING</div>
+        </div>
+        <div class="banner-right">
+            <div class="season">2025â26</div>
+            <div class="updated" id="updated">Updatingâ¦</div>
+        </div>
+    </div>
+
+    <!-- 3 COLUMNS -->
+    <div class="main-grid">
+
+        <!-- COLUMN 1: REVENUE -->
+        <div class="col">
+            <div class="col-header">
+                <div class="col-label">Revenue</div>
+                <div class="col-badge fail" id="rev-badge">â  AT RISK</div>
+            </div>
+            <div class="big-number blue" id="rev-value">$0.00M</div>
+            <div class="metric-target">Target: <span id="rev-target">$10.34M</span> (full year)</div>
+            <div class="metric-variance neg" id="rev-variance">â</div>
+            <div class="metric-interp" id="rev-interp">Loadingâ¦</div>
+
+            <div class="progress-wrap">
+                <div class="progress-label">
+                    <span>YTD Progress</span>
+                    <span id="rev-pct">0%</span>
+                </div>
+                <div class="progress-track">
+                    <div class="progress-fill blue" id="rev-bar" style="width:0%"></div>
+                </div>
+            </div>
+
+            <div class="chart-area">
+                <canvas id="revenueChart"></canvas>
+            </div>
+        </div>
+
+        <!-- COLUMN 2: GROSS MARGIN -->
+        <div class="col">
+            <div class="col-header">
+                <div class="col-label">Gross Margin</div>
+                <div class="col-badge pass" id="mgn-badge">â ON TARGET</div>
+            </div>
+            <div class="big-number gold" id="mgn-value">0.0%</div>
+            <div class="metric-target">Target: <span id="mgn-target">â¥31.66%</span></div>
+            <div class="metric-variance pos" id="mgn-variance">â</div>
+            <div class="metric-interp" id="mgn-interp">Loadingâ¦</div>
+
+            <div class="progress-wrap">
+                <div class="progress-label">
+                    <span>vs Target</span>
+                    <span id="mgn-pct">0%</span>
+                </div>
+                <div class="progress-track">
+                    <div class="progress-fill gold" id="mgn-bar" style="width:0%"></div>
+                </div>
+            </div>
+
+            <div class="chart-area">
+                <canvas id="marginChart"></canvas>
+            </div>
+        </div>
+
+        <!-- COLUMN 3: TEAM GOALS -->
+        <div class="col">
+            <div class="col-header">
+                <div class="col-label">Team Goals</div>
+                <div class="col-badge fail" id="gls-badge">â BELOW TARGET</div>
+            </div>
+            <div class="big-number green" id="gls-value">0 / 27</div>
+            <div class="metric-target">Target: 50% complete (14 of 27)</div>
+            <div class="metric-variance neg" id="gls-variance">â</div>
+            <div class="metric-interp" id="gls-interp">Loadingâ¦</div>
+
+            <div class="progress-wrap">
+                <div class="progress-label">
+                    <span>Toward 50% target</span>
+                    <span id="gls-pct">0%</span>
+                </div>
+                <div class="progress-track" style="position:relative;">
+                    <div class="progress-fill green" id="gls-bar" style="width:0%"></div>
+                    <!-- 50% marker at exact halfway -->
+                    <div style="position:absolute;left:50%;top:0;bottom:0;width:2px;background:var(--gold);opacity:0.8;"></div>
+                </div>
+                <div style="text-align:center;font-size:10px;color:var(--gold);margin-top:3px;font-family:'Barlow Condensed',sans-serif;font-weight:700;letter-spacing:1px;">50% BONUS THRESHOLD</div>
+            </div>
+
+            <div class="stacked-container">
+                <canvas id="goalsChart"></canvas>
+            </div>
+            <div class="stack-label-row" id="goals-legend"></div>
+        </div>
+
+    </div><!-- /main-grid -->
+
+    <!-- BOTTOM CHECKLIST -->
+    <div class="checklist-bar">
+        <div class="checklist-title">Bonus Requirements</div>
+        <div class="checklist-items">
+            <div class="check-item">
+                <div class="check-icon fail" id="chk-rev">â</div>
+                <div>
+                    <div class="check-text">Revenue Target</div>
+                    <div class="check-note" id="chk-rev-note">Behind full-year target</div>
+                </div>
+            </div>
+            <div class="check-item">
+                <div class="check-icon pass" id="chk-mgn">â</div>
+                <div>
+                    <div class="check-text">Gross Margin Target</div>
+                    <div class="check-note" id="chk-mgn-note">Above minimum threshold</div>
+                </div>
+            </div>
+            <div class="check-item">
+                <div class="check-icon fail" id="chk-gls">â</div>
+                <div>
+                    <div class="check-text">50% Goals Achieved</div>
+                    <div class="check-note" id="chk-gls-note">More goals needed</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div><!-- /dashboard -->
+
+<script>
+    const CONFIG = {
+        financialSheetUrl: 'https://docs.google.com/spreadsheets/d/1VumQnhFi2siIvaWHPZ1LuMdFiqI6ifjS_sHJIAKRi4c/export?format=csv&gid=864771061',
+        goalsSheetUrl:     'https://docs.google.com/spreadsheets/d/1VumQnhFi2siIvaWHPZ1LuMdFiqI6ifjS_sHJIAKRi4c/export?format=csv&gid=368453036'
+    };
+
+    const DEPT_NAMES = ['AV','Design','Expo','Finance','People, Culture & Performance','Permanent','Production','Systems','Warehouse'];
+    const MONTH_LABELS = ['Jul','Aug','Sep','Oct','Nov','Dec','Jan','Feb','Mar','Apr','May','Jun'];
+    const REV_TARGET = 10342000;
+    const MGN_TARGET = 31.66;
+    const GOALS_TOTAL = 27;
+    const GOALS_BONUS = 14; // 50% threshold
+
+    let revenueChart, marginChart, goalsChart;
+
+    // ââ Data ââââââââââââââââââââââââââââââââââââââââââ
+    function parseCSVLine(line) {
+        const result = []; let current = ''; let inQuotes = false;
+        for (let i = 0; i < line.length; i++) {
+            const c = line[i];
+            if (c === '"') { if (inQuotes && line[i+1] === '"') { current += '"'; i++; } else { inQuotes = !inQuotes; } }
+            else if (c === ',' && !inQuotes) { result.push(current.trim()); current = ''; }
+            else { current += c; }
+        }
+        result.push(current.trim());
+        return result;
+    }
+    function parseNum(v) { return parseFloat(String(v).replace(/[$,%"]/g,'').trim()) || 0; }
+
+    function processFinancial(csv) {
+        const lines = csv.split('\n');
+        const fd = { monthlyRevenue: [], margins: [] };
+        lines.forEach((line, idx) => {
+            if (idx === 12) {
+                fd.monthlyRevenue = parseCSVLine(line).slice(1, 13).map(parseNum);
+                fd.actualRevenue  = fd.monthlyRevenue.reduce((a,b) => a+b, 0);
+            }
+            if (idx === 15) {
+                fd.margins = parseCSVLine(line).slice(1, 13).map(v => {
+                    const n = parseNum(v);
+                    return (n > 0 && n < 1) ? n * 100 : n;
+                });
+                const nonZero = fd.margins.filter(m => m > 0);
+                fd.currentMargin = nonZero.length ? nonZero[nonZero.length - 1] : 0;
+            }
+        });
+        fd.revenueTarget = REV_TARGET;
+        fd.marginTarget  = MGN_TARGET;
+        window.fd = fd;
+    }
+
+    function processGoals(csv) {
+        const lines = csv.split('\n');
+        const gd = { completed: 0, total: GOALS_TOTAL, statuses: {} };
+        const statusKeys = ['Completed','On Track','At Risk','Off Track','Not Started','AI Risk'];
+        statusKeys.forEach(k => gd.statuses[k] = 0);
+
+        lines.forEach((line, idx) => {
+            if (idx > 0 && line.trim()) {
+                const cols = parseCSVLine(line);
+                const dept = (cols[0] || '').trim();
+                if (!DEPT_NAMES.includes(dept)) return;
+                const status = (cols[5] || '').trim() || 'Not Started';
+                if (status.includes('Completed'))  { gd.statuses['Completed']++;   gd.completed++; }
+                else if (status.includes('On Track'))  gd.statuses['On Track']++;
+                else if (status.includes('Off Track')) gd.statuses['Off Track']++;
+                else if (status.includes('At Risk'))   gd.statuses['At Risk']++;
+                else if (status.includes('AI Risk'))   gd.statuses['AI Risk']++;
+                else                                   gd.statuses['Not Started']++;
+            }
+        });
+        window.gd = gd;
+    }
+
+    // ââ Render ââââââââââââââââââââââââââââââââââââââââ
+    function fmt(n) { return '$' + (n/1000000).toFixed(2) + 'M'; }
+
+    function render() {
+        const rev    = window.fd?.actualRevenue  || 0;
+        const margin = window.fd?.currentMargin  || 0;
+        const comp   = window.gd?.completed      || 0;
+        const stats  = window.gd?.statuses       || {};
+
+        // ââ REVENUE
+        const revPct  = Math.min((rev / REV_TARGET) * 100, 120);
+        const revDiff = rev - REV_TARGET;
+        const revMet  = rev >= REV_TARGET;
+
+        set('rev-value',    fmt(rev));
+        set('rev-pct',      Math.round(revPct) + '% of target');
+        set('rev-variance', (revDiff >= 0 ? '+' : '') + fmt(revDiff));
+        cls('rev-variance', revDiff >= 0 ? 'metric-variance pos' : 'metric-variance neg');
+        set('rev-interp', revMet ? 'On track to meet full-year target'
+                                 : fmt(Math.abs(revDiff)) + ' behind full-year target');
+        bar('rev-bar', revPct, 100);
+        badge('rev-badge', revMet, 'â ON TARGET', 'â BEHIND TARGET');
+        checkIcon('chk-rev', revMet);
+        set('chk-rev-note', revMet ? 'Full-year target met' : fmt(Math.abs(revDiff)) + ' behind target');
+
+        // ââ MARGIN
+        const mgnPct = Math.min((margin / MGN_TARGET) * 100, 120);
+        const mgnDiff = margin - MGN_TARGET;
+        const mgnMet  = margin >= MGN_TARGET;
+
+        set('mgn-value',    margin.toFixed(1) + '%');
+        set('mgn-pct',      Math.round(mgnPct) + '% of target');
+        set('mgn-variance', (mgnDiff >= 0 ? '+' : '') + Math.abs(mgnDiff).toFixed(1) + ' pts');
+        cls('mgn-variance', mgnDiff >= 0 ? 'metric-variance pos' : 'metric-variance neg');
+        set('mgn-interp', mgnMet ? margin.toFixed(1) + '% â above target of ' + MGN_TARGET + '%'
+                                 : margin.toFixed(1) + '% â ' + Math.abs(mgnDiff).toFixed(1) + ' pts below target');
+        bar('mgn-bar', mgnPct, 100);
+        badge('mgn-badge', mgnMet, 'â ON TARGET', 'â BELOW TARGET', true);
+        checkIcon('chk-mgn', mgnMet);
+        set('chk-mgn-note', mgnMet ? 'Above ' + MGN_TARGET + '% threshold' : Math.abs(mgnDiff).toFixed(1) + ' pts below threshold');
+
+        // ââ GOALS
+        const glsPct = Math.min((comp / GOALS_BONUS) * 100, 120);
+        const glsMet  = comp >= GOALS_BONUS;
+        const glsNeed = Math.max(0, GOALS_BONUS - comp);
+
+        set('gls-value',    comp + ' / ' + GOALS_TOTAL);
+        set('gls-pct',      Math.round((comp/GOALS_TOTAL)*100) + '% complete');
+        set('gls-variance', glsMet ? '+' + (comp - GOALS_BONUS) + ' above bonus target'
+                                   : glsNeed + ' more goal' + (glsNeed !== 1 ? 's' : '') + ' needed');
+        cls('gls-variance', glsMet ? 'metric-variance pos' : 'metric-variance neg');
+        set('gls-interp', glsMet ? 'Bonus goal threshold reached!'
+                                 : glsNeed + ' more goal' + (glsNeed !== 1 ? 's' : '') + ' required to unlock bonus');
+        bar('gls-bar', Math.min((comp/GOALS_TOTAL)*100*2, 100), 100); // bar is out of 50%
+        badge('gls-badge', glsMet, 'â ACHIEVED', 'â BELOW TARGET');
+        checkIcon('chk-gls', glsMet);
+        set('chk-gls-note', glsMet ? 'Bonus threshold reached' : glsNeed + ' more goal' + (glsNeed!==1?'s':'') + ' to unlock');
+
+        // ââ BONUS BANNER
+        const metCount = (revMet ? 1 : 0) + (mgnMet ? 1 : 0) + (glsMet ? 1 : 0);
+        set('banner-headline', 'BONUS STATUS: ' + metCount + ' OF 3 METRICS MET');
+        const pill = document.getElementById('bonus-pill');
+        if (metCount === 3) {
+            pill.textContent = 'ð UNLOCKED'; pill.className = 'status-pill unlocked';
+        } else if (metCount === 2) {
+            pill.textContent = 'â  AT RISK'; pill.className = 'status-pill at-risk';
+        } else {
+            pill.textContent = 'ð LOCKED'; pill.className = 'status-pill locked';
+        }
+
+        renderCharts(stats, comp);
+        const now = new Date();
+        set('updated', 'Updated ' + now.toLocaleString('en-AU',{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit',hour12:true}));
+    }
+
+    function set(id, txt) { const el = document.getElementById(id); if (el) el.textContent = txt; }
+    function cls(id, c)   { const el = document.getElementById(id); if (el) el.className = c; }
+
+    function bar(id, pct, max) {
+        const el = document.getElementById(id);
+        if (el) el.style.width = Math.min(pct, 100) + '%';
+    }
+
+    function badge(id, pass, passText, failText, gold) {
+        const el = document.getElementById(id);
+        if (!el) return;
+        el.textContent = pass ? passText : failText;
+        el.className = 'col-badge ' + (pass ? 'pass' : (gold ? 'warn' : 'fail'));
+    }
+
+    function checkIcon(id, pass) {
+        const el = document.getElementById(id);
+        if (!el) return;
+        el.textContent = pass ? 'â' : 'â';
+        el.className = 'check-icon ' + (pass ? 'pass' : 'fail');
+    }
+
+    // ââ Charts ââââââââââââââââââââââââââââââââââââââââ
+    const STATUS_COLORS = {
+        'Completed':   '#00E887',
+        'On Track':    '#00CFFF',
+        'At Risk':     '#FFD13A',
+        'Off Track':   '#FF4455',
+        'Not Started': '#334155',
+        'AI Risk':     '#9A7AB3'
+    };
+
+    // Plugin: dashed target line on line charts
+    Chart.register({
+        id: 'dashedTarget',
+        afterDraw(chart) {
+            const t = chart.options.plugins?.dashedTarget;
+            if (!t?.value) return;
+            const { ctx, chartArea, scales } = chart;
+            if (!scales.y || !chartArea) return;
+            const yPos = scales.y.getPixelForValue(t.value);
+            if (yPos < chartArea.top || yPos > chartArea.bottom) return;
+            ctx.save();
+            ctx.beginPath();
+            ctx.moveTo(chartArea.left, yPos);
+            ctx.lineTo(chartArea.right, yPos);
+            ctx.strokeStyle = t.color || 'rgba(255,255,255,0.3)';
+            ctx.lineWidth = 1.5;
+            ctx.setLineDash([6, 4]);
+            ctx.stroke();
+            ctx.setLineDash([]);
+            ctx.font = '700 10px "Barlow Condensed", sans-serif';
+            ctx.fillStyle = t.color || 'rgba(255,255,255,0.3)';
+            ctx.textAlign = 'right';
+            ctx.fillText('TARGET', chartArea.right - 4, yPos - 5);
+            ctx.restore();
+        }
+    });
+
+    function renderCharts(stats, comp) {
+        const active = (window.fd?.monthlyRevenue || []).map((v,i) => v > 0 ? i : -1).filter(i => i >= 0);
+        const lastIdx = active.length;
+        const revData   = (window.fd?.monthlyRevenue || []).slice(0, lastIdx);
+        const mgnData   = (window.fd?.margins || []).slice(0, lastIdx);
+        const labels    = MONTH_LABELS.slice(0, Math.max(lastIdx, 3));
+        const monthlyTarget = REV_TARGET / 12;
+
+        // Revenue chart
+        if (revenueChart) revenueChart.destroy();
+        revenueChart = new Chart(document.getElementById('revenueChart'), {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [
+                    {
+                        label: 'Revenue',
+                        data: revData.length ? revData : [0],
+                        borderColor: '#00CFFF',
+                        backgroundColor: 'rgba(0,207,255,0.08)',
+                        borderWidth: 2.5,
+                        tension: 0,
+                        fill: true,
+                        pointRadius: (ctx) => ctx.dataIndex === revData.length - 1 ? 6 : 3,
+                        pointBackgroundColor: '#00CFFF',
+                        pointBorderColor: '#05080f',
+                        pointBorderWidth: 2,
+                        order: 1
+                    },
+                    {
+                        label: 'Monthly Target',
+                        data: Array(labels.length).fill(monthlyTarget),
+                        borderColor: 'rgba(255,209,58,0.5)',
+                        borderWidth: 1.5,
+                        borderDash: [6,4],
+                        pointRadius: 0,
+                        fill: false,
+                        tension: 0,
+                        order: 2
+                    }
+                ]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    dashedTarget: { value: null }
+                },
+                scales: {
+                    y: {
+                        display: true,
+                        grid: { color: 'rgba(255,255,255,0.05)', drawBorder: false },
+                        ticks: { color: '#8896B0', font: { size: 10 }, callback: v => '$' + (v/1000000).toFixed(1)+'M', maxTicksLimit: 4 }
+                    },
+                    x: { display: true, grid: { display: false }, ticks: { color: '#8896B0', font: { size: 10 } } }
+                }
+            }
+        });
+
+        // Margin chart
+        if (marginChart) marginChart.destroy();
+        marginChart = new Chart(document.getElementById('marginChart'), {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [
+                    {
+                        label: 'Margin %',
+                        data: mgnData.length ? mgnData : [0],
+                        borderColor: '#FFD13A',
+                        backgroundColor: 'rgba(255,209,58,0.08)',
+                        borderWidth: 2.5,
+                        tension: 0,
+                        fill: true,
+                        pointRadius: (ctx) => ctx.dataIndex === mgnData.length - 1 ? 6 : 3,
+                        pointBackgroundColor: '#FFD13A',
+                        pointBorderColor: '#05080f',
+                        pointBorderWidth: 2,
+                        order: 1
+                    },
+                    {
+                        label: 'Target',
+                        data: Array(labels.length).fill(MGN_TARGET),
+                        borderColor: 'rgba(255,209,58,0.4)',
+                        borderWidth: 1.5,
+                        borderDash: [6,4],
+                        pointRadius: 0,
+                        fill: false,
+                        tension: 0,
+                        order: 2
+                    }
+                ]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    dashedTarget: { value: MGN_TARGET, color: 'rgba(255,209,58,0.5)' }
+                },
+                scales: {
+                    y: {
+                        display: true,
+                        grid: { color: 'rgba(255,255,255,0.05)', drawBorder: false },
+                        ticks: { color: '#8896B0', font: { size: 10 }, callback: v => v.toFixed(0)+'%', maxTicksLimit: 4 }
+                    },
+                    x: { display: true, grid: { display: false }, ticks: { color: '#8896B0', font: { size: 10 } } }
+                }
+            }
+        });
+
+        // Goals stacked bar
+        if (goalsChart) goalsChart.destroy();
+        const statusKeys = ['Completed','On Track','At Risk','Off Track','Not Started','AI Risk'];
+        const datasets = statusKeys.map(k => ({
+            label: k,
+            data: [stats[k] || 0],
+            backgroundColor: STATUS_COLORS[k],
+            borderRadius: 3
+        }));
+        goalsChart = new Chart(document.getElementById('goalsChart'), {
+            type: 'bar',
+            data: { labels: [''], datasets },
+            options: {
+                indexAxis: 'y',
+                responsive: true, maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: { stacked: true, max: GOALS_TOTAL, display: true, grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#8896B0', font: { size: 10 }, stepSize: 5 } },
+                    y: { stacked: true, display: false }
+                },
+                layout: { padding: { top: 4 } }
+            }
+        });
+
+        // Legend
+        const legendEl = document.getElementById('goals-legend');
+        legendEl.innerHTML = statusKeys.filter(k => (stats[k]||0) > 0).map(k =>
+            `<div class="stack-label"><div class="stack-dot" style="background:${STATUS_COLORS[k]}"></div>${k}: ${stats[k]||0}</div>`
+        ).join('');
+    }
+
+    // ââ Fetch âââââââââââââââââââââââââââââââââââââââââ
+    async function fetchData() {
+        try {
+            const [fin, gls] = await Promise.all([
+                fetch(CONFIG.financialSheetUrl).then(r => r.text()),
+                fetch(CONFIG.goalsSheetUrl).then(r => r.text())
+            ]);
+            processFinancial(fin);
+            processGoals(gls);
+        } catch (e) {
+            console.error('Fetch error:', e);
+        }
+        render();
+    }
+
+    fetchData();
+    setInterval(fetchData, 900000);
+</script>
+</body>
+</html>
