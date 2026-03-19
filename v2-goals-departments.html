@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=1920, initial-scale=1.0">
+    <title>Xzibit Department Goals 2025-26</title>
+    <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800;900&family=Barlow:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --bg:      #05080f;
+            --surface: #0c1222;
+            --surf2:   #111827;
+            --border:  rgba(255,255,255,0.08);
+            --blue:    #00CFFF;
+            --gold:    #FFD13A;
+            --green:   #00E887;
+            --orange:  #FF8C1A;
+            --red:     #FF4455;
+            --purple:  #9A7AB3;
+            --text:    #FFFFFF;
+            --dim:     #8896B0;
+        }
+        html, body {
+            width: 100vw; height: 100vh;
+            overflow: hidden;
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'Barlow', sans-serif;
+        }
+        .dashboard { width: 100%; height: 100%; display: flex; flex-direction: column; }
+
+        /* ââ HEADER ââ */
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 48px;
+            height: 80px;
+            background: var(--surface);
+            border-bottom: 3px solid var(--border);
+            flex-shrink: 0;
+        }
+        .header-left { display: flex; align-items: center; gap: 20px; }
+        .logo-x {
+            width: 50px; height: 50px;
+            background: var(--blue); color: #000;
+            display: flex; align-items: center; justify-content: center;
+            font-family: 'Barlow Condensed', sans-serif;
+            font-size: 32px; font-weight: 900; border-radius: 6px; flex-shrink: 0;
+        }
+        .header-title {
+            font-family: 'Barlow Condensed', sans-serif;
+            font-size: 15px; font-weight: 700;
+            letter-spacing: 4px; text-transform: uppercase; color: var(--dim);
+        }
+        .dept-headline {
+            font-family: 'Barlow Condensed', sans-serif;
+            font-size: 40px; font-weight: 900;
+            letter-spacing: 2px; text-transform: uppercase;
+            line-height: 1;
+            transition: opacity 0.3s;
+        }
+        .header-center {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0;
+        }
+        .progress-ticker {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: var(--surf2);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 10px 24px;
+        }
+        .ticker-value {
+            font-family: 'Barlow Condensed', sans-serif;
+            font-size: 32px; font-weight: 900;
+            transition: opacity 0.3s;
+        }
+        .ticker-label { font-size: 13px; color: var(--dim); }
+        .header-right { text-align: right; flex-shrink: 0; }
+        .season { font-family: 'Barlow Condensed', sans-serif; font-size: 22px; font-weight: 700; color: var(--gold); letter-spacing: 2px; }
+        .updated { font-size: 11px; color: var(--dim); margin-top: 3px; }
+
+        /* ââ DEPT BANNER (dept-specific accent) ââ */
+        .dept-banner {
+            height: 6px;
+            transition: background 0.4s;
+            flex-shrink: 0;
+        }
+
+        /* ââ 3 GOAL CARDS ââ */
+        .cards-row {
+            flex: 1;
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 0;
+            overflow: hidden;
+        }
+        .goal-card {
+            display: flex;
+            flex-direction: column;
+            padding: 32px 36px;
+            border-right: 1px solid var(--border);
+            position: relative;
+            transition: border-left-color 0.4s;
+            border-left: 4px solid transparent;
+        }
+        .goal-card:last-child { border-right: none; }
+
+        .goal-number {
+            font-family: 'Barlow Condensed', sans-serif;
+            font-size: 13px; font-weight: 700;
+            letter-spacing: 4px; text-transform: uppercase;
+            color: var(--dim); margin-bottom: 16px;
+        }
+        .goal-title {
+            font-family: 'Barlow Condensed', sans-serif;
+            font-size: 30px; font-weight: 800;
+            line-height: 1.2;
+            flex: 1;
+            margin-bottom: 24px;
+        }
+        .goal-note {
+            font-size: 14px;
+            color: var(--dim);
+            line-height: 1.5;
+            margin-bottom: 24px;
+            min-height: 42px;
+        }
+        .goal-status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 20px;
+            border-radius: 8px;
+            font-family: 'Barlow Condensed', sans-serif;
+            font-size: 20px; font-weight: 900;
+            letter-spacing: 2px; text-transform: uppercase;
+            border: 2px solid transparent;
+            align-self: flex-start;
+        }
+        .badge-icon { font-size: 20px; }
+
+        /* Status badge colours */
+        .s-completed  { background: rgba(0,232,135,0.12); color: #00E887; border-color: rgba(0,232,135,0.35); }
+        .s-ontrack    { background: rgba(0,207,255,0.12); color: #00CFFF; border-color: rgba(0,207,255,0.35); }
+        .s-atrisk     { background: rgba(255,209,58,0.12); color: #FFD13A; border-color: rgba(255,209,58,0.35); }
+        .s-offtrack   { background: rgba(255,68,85,0.12);  color: #FF4455; border-color: rgba(255,68,85,0.35); }
+        .s-airisk     { background: rgba(154,122,179,0.12); color: #9A7AB3; border-color: rgba(154,122,179,0.35); }
+        .s-notstarted { background: rgba(255,255,255,0.05); color: #8896B0; border-color: rgba(255,255,255,0.15); }
+
+        /* Card left border by status */
+        .goal-card.s-completed  { border-left-color: #00E887; }
+        .goal-card.s-ontrack    { border-left-color: #00CFFF; }
+        .goal-card.s-atrisk     { border-left-color: #FFD13A; }
+        .goal-card.s-offtrack   { border-left-color: #FF4455; }
+        .goal-card.s-airisk     { border-left-color: #9A7AB3; }
+        .goal-card.s-notstarted { border-left-color: rgba(255,255,255,0.15); }
+
+        /* Placeholder when no data */
+        .placeholder-card {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            gap: 12px;
+            color: var(--dim);
+        }
+        .placeholder-card .ph-icon { font-size: 36px; opacity: 0.4; }
+        .placeholder-card .ph-text { font-size: 14px; }
+
+        /* ââ BOTTOM: STATUS BAR + NAV ââ */
+        .bottom-section {
+            flex-shrink: 0;
+            background: var(--surface);
+            border-top: 2px solid var(--border);
+        }
+        .status-bar-wrap {
+            padding: 16px 48px 12px;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+        .sb-label {
+            font-family: 'Barlow Condensed', sans-serif;
+            font-size: 12px; font-weight: 700;
+            letter-spacing: 3px; text-transform: uppercase;
+            color: var(--dim); white-space: nowrap;
+        }
+        .sb-chart-wrap { flex: 1; height: 18px; position: relative; }
+        .sb-legend {
+            display: flex;
+            gap: 16px;
+            flex-shrink: 0;
+        }
+        .sb-item { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--dim); }
+        .sb-dot { width: 10px; height: 10px; border-radius: 2px; }
+        .nav-row {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            padding: 10px 0 14px;
+        }
+        .nav-dot {
+            width: 10px; height: 10px;
+            border-radius: 50%;
+            background: var(--border);
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .nav-dot.active {
+            background: var(--blue);
+            width: 28px;
+            border-radius: 5px;
+        }
+        .nav-dept-label {
+            font-family: 'Barlow Condensed', sans-serif;
+            font-size: 12px; font-weight: 700;
+            letter-spacing: 2px; text-transform: uppercase;
+            color: var(--dim); margin: 0 8px;
+        }
+
+        /* Fade transition */
+        .fade-out { opacity: 0; transition: opacity 0.25s; }
+        .fade-in  { opacity: 1; transition: opacity 0.25s; }
+    </style>
+</head>
+<body>
+<div class="dashboard">
+
+    <!-- HEADER -->
+    <div class="header">
+        <div class="header-left">
+            <div class="logo-x">X</div>
+            <div>
+                <div class="header-title">Department Goals</div>
+                <div class="dept-headline" id="dept-name">Loadingâ¦</div>
+            </div>
+        </div>
+
+        <div class="header-center">
+            <div class="progress-ticker">
+                <div class="ticker-value" id="dept-score" style="color:var(--green)">â</div>
+                <div>
+                    <div class="ticker-label">Goals Completed</div>
+                    <div style="font-size:11px;color:var(--dim);" id="dept-sub">of 3</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="header-right">
+            <div class="season">2025â26</div>
+            <div class="updated" id="updated">Updatingâ¦</div>
+        </div>
+    </div>
+
+    <!-- DEPT COLOUR ACCENT BAR -->
+    <div class="dept-banner" id="dept-banner"></div>
+
+    <!-- 3 GOAL CARDS -->
+    <div class="cards-row" id="cards-row">
+        <!-- rendered by JS -->
+    </div>
+
+    <!-- BOTTOM: STATUS BAR + NAV -->
+    <div class="bottom-section">
+        <div class="status-bar-wrap">
+            <div class="sb-label">This Dept</div>
+            <div class="sb-chart-wrap">
+                <canvas id="deptDistChart"></canvas>
+            </div>
+            <div class="sb-legend" id="sb-legend"></div>
+        </div>
+        <div class="nav-row" id="nav-row"></div>
+    </div>
+
+</div><!-- /dashboard -->
+
+<script>
+    const CONFIG = {
+        goalsSheetUrl: 'https://docs.google.com/spreadsheets/d/1VumQnhFi2siIvaWHPZ1LuMdFiqI6ifjS_sHJIAKRi4c/export?format=csv&gid=368453036'
+    };
+
+    const DEPARTMENTS = ['AV','Design','Expo','Finance','People, Culture & Performance','Permanent','Production','Systems','Warehouse'];
+    const DEPT_SHORT  = { 'People, Culture & Performance': 'People & Culture' };
+
+    const STATUS_META = {
+        'Completed':   { cls: 's-completed',  icon: 'â', color: '#00E887' },
+        'On Track':    { cls: 's-ontrack',    icon: 'â', color: '#00CFFF' },
+        'At Risk':     { cls: 's-atrisk',     icon: 'â ', color: '#FFD13A' },
+        'Off Track':   { cls: 's-offtrack',   icon: 'â', color: '#FF4455' },
+        'AI Risk':     { cls: 's-airisk',     icon: '!', color: '#9A7AB3' },
+        'Not Started': { cls: 's-notstarted', icon: 'â', color: '#334155' }
+    };
+
+    // Which status to use for the dept accent bar colour
+    function deptAccentColor(goals) {
+        if (!goals.length) return '#334155';
+        const comp = goals.filter(g => g.status.includes('Completed')).length;
+        if (comp === 3) return '#00E887';
+        if (goals.some(g => g.status.includes('Off Track'))) return '#FF4455';
+        if (goals.some(g => g.status.includes('At Risk')))   return '#FFD13A';
+        if (goals.some(g => g.status.includes('On Track')))  return '#00CFFF';
+        return '#334155';
+    }
+
+    function getStatusKey(rawStatus) {
+        if (!rawStatus) return 'Not Started';
+        if (rawStatus.includes('Completed'))  return 'Completed';
+        if (rawStatus.includes('Off Track'))  return 'Off Track';
+        if (rawStatus.includes('On Track'))   return 'On Track';
+        if (rawStatus.includes('At Risk'))    return 'At Risk';
+        if (rawStatus.includes('AI Risk'))    return 'AI Risk';
+        return 'Not Started';
+    }
+
+    let currentIdx = 0;
+    let carouselTimer = null;
+    let deptDistChart = null;
+    let allGoals = {}; // dept â [{title, status, number}]
+
+    function parseCSVLine(line) {
+        const res = []; let cur = ''; let inQ = false;
+        for (let i = 0; i < line.length; i++) {
+            const c = line[i];
+            if (c === '"') { if (inQ && line[i+1] === '"') { cur += '"'; i++; } else inQ = !inQ; }
+            else if (c === ',' && !inQ) { res.push(cur.trim()); cur = ''; }
+            else cur += c;
+        }
+        res.push(cur.trim());
+        return res;
+    }
+
+    function processGoals(csv) {
+        const lines = csv.split('\n');
+        allGoals = {};
+        DEPARTMENTS.forEach(d => allGoals[d] = []);
+
+        lines.forEach((line, idx) => {
+            if (idx > 0 && line.trim()) {
+                const cols = parseCSVLine(line);
+                const dept = (cols[0] || '').trim();
+                if (!DEPARTMENTS.includes(dept)) return;
+                if (allGoals[dept].length >= 3) return; // max 3 per dept
+                const title  = (cols[1] || 'Untitled goal').trim();
+                const status = getStatusKey((cols[5] || '').trim());
+                allGoals[dept].push({ title, status, number: allGoals[dept].length + 1 });
+            }
+        });
+    }
+
+    function renderDept(idx) {
+        const dept  = DEPARTMENTS[idx];
+        const goals = allGoals[dept] || [];
+        const name  = DEPT_SHORT[dept] || dept;
+        const comp  = goals.filter(g => g.status === 'Completed').length;
+
+        // Header
+        set('dept-name', name);
+        set('dept-score', comp + ' / ' + (goals.length || 3));
+        set('dept-sub', 'goals completed');
+
+        const scoreColor = comp === 3 ? 'var(--green)' : comp >= 1 ? 'var(--blue)' : 'var(--dim)';
+        const scoreEl = document.getElementById('dept-score');
+        if (scoreEl) scoreEl.style.color = scoreColor;
+
+        // Accent bar
+        document.getElementById('dept-banner').style.background = deptAccentColor(goals);
+
+        // Cards
+        const hasData = goals.length > 0;
+        document.getElementById('cards-row').innerHTML = hasData
+            ? goals.map(g => renderCard(g)).join('')
+            : renderPlaceholderCards();
+
+        // Status distribution bar for this dept
+        renderDeptDist(goals);
+
+        // Nav
+        renderNav(idx);
+
+        // Timestamp
+        const now = new Date();
+        set('updated', 'Updated ' + now.toLocaleString('en-AU',{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit',hour12:true}));
+    }
+
+    function renderCard(goal) {
+        const sm   = STATUS_META[goal.status] || STATUS_META['Not Started'];
+        return `<div class="goal-card ${sm.cls}">
+            <div class="goal-number">Goal ${goal.number}</div>
+            <div class="goal-title">${goal.title}</div>
+            <div class="goal-note"></div>
+            <div class="goal-status-badge ${sm.cls}">
+                <span class="badge-icon">${sm.icon}</span>
+                <span>${goal.status}</span>
+            </div>
+        </div>`;
+    }
+
+    function renderPlaceholderCards() {
+        return Array(3).fill(0).map((_, i) => `
+            <div class="goal-card placeholder-card s-notstarted">
+                <div class="ph-icon">â</div>
+                <div class="ph-text">Goal ${i+1} â loadingâ¦</div>
+            </div>`).join('');
+    }
+
+    function renderDeptDist(goals) {
+        if (deptDistChart) deptDistChart.destroy();
+
+        const statusOrder = ['Completed','On Track','At Risk','Off Track','AI Risk','Not Started'];
+        const counts = {};
+        statusOrder.forEach(k => counts[k] = 0);
+        goals.forEach(g => counts[g.status] = (counts[g.status] || 0) + 1);
+
+        // Fill remaining slots as Not Started if < 3 goals returned
+        const totalSlots = 3;
+        const shown = goals.length;
+        if (shown < totalSlots) counts['Not Started'] += (totalSlots - shown);
+
+        const activeKeys = statusOrder.filter(k => counts[k] > 0);
+
+        deptDistChart = new Chart(document.getElementById('deptDistChart'), {
+            type: 'bar',
+            data: {
+                labels: [''],
+                datasets: statusOrder.map(k => ({
+                    label: k,
+                    data: [counts[k] || 0],
+                    backgroundColor: STATUS_META[k]?.color || '#334155',
+                    borderRadius: 3
+                }))
+            },
+            options: {
+                indexAxis: 'y',
+                responsive: true, maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: { stacked: true, max: 3, display: false },
+                    y: { stacked: true, display: false }
+                }
+            }
+        });
+
+        // Legend
+        document.getElementById('sb-legend').innerHTML = activeKeys.map(k => `
+            <div class="sb-item">
+                <div class="sb-dot" style="background:${STATUS_META[k]?.color}"></div>
+                <span>${k}: ${counts[k]}</span>
+            </div>`).join('');
+    }
+
+    function renderNav(activeIdx) {
+        document.getElementById('nav-row').innerHTML = DEPARTMENTS.map((dept, i) => {
+            const name = DEPT_SHORT[dept] || dept;
+            const isActive = i === activeIdx;
+            return `<div class="nav-dot ${isActive ? 'active' : ''}" onclick="goTo(${i})" title="${name}"></div>`;
+        }).join('');
+    }
+
+    function goTo(idx) {
+        currentIdx = idx;
+        renderDept(currentIdx);
+        resetCarousel();
+    }
+
+    function resetCarousel() {
+        if (carouselTimer) clearInterval(carouselTimer);
+        carouselTimer = setInterval(() => {
+            currentIdx = (currentIdx + 1) % DEPARTMENTS.length;
+            renderDept(currentIdx);
+        }, 10000);
+    }
+
+    function set(id, val) { const el = document.getElementById(id); if (el) el.textContent = val; }
+
+    async function fetchData() {
+        try {
+            const csv = await fetch(CONFIG.goalsSheetUrl).then(r => r.text());
+            processGoals(csv);
+        } catch (e) {
+            console.error('Fetch error:', e);
+        }
+        renderDept(currentIdx);
+    }
+
+    fetchData();
+    resetCarousel();
+    setInterval(fetchData, 900000);
+</script>
+</body>
+</html>
