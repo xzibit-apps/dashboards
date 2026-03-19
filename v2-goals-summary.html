@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=1920, initial-scale=1.0">
+    <title>Xzibit Goals Summary 2025-26</title>
+    <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800;900&family=Barlow:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --bg:      #05080f;
+            --surface: #0c1222;
+            --surf2:   #111827;
+            --border:  rgba(255,255,255,0.08);
+            --blue:    #00CFFF;
+            --gold:    #FFD13A;
+            --green:   #00E887;
+            --orange:  #FF8C1A;
+            --red:     #FF4455;
+            --purple:  #9A7AB3;
+            --text:    #FFFFFF;
+            --dim:     #8896B0;
+        }
+        html, body {
+            width: 100vw; height: 100vh;
+            overflow: hidden;
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'Barlow', sans-serif;
+        }
+        .dashboard { width: 100%; height: 100%; display: flex; flex-direction: column; }
+
+        /* ââ HEADER ââ */
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 48px;
+            height: 80px;
+            background: var(--surface);
+            border-bottom: 3px solid var(--border);
+            flex-shrink: 0;
+        }
+        .header-left { display: flex; align-items: center; gap: 20px; }
+        .logo-x {
+            width: 50px; height: 50px;
+            background: var(--blue); color: #000;
+            display: flex; align-items: center; justify-content: center;
+            font-family: 'Barlow Condensed', sans-serif;
+            font-size: 32px; font-weight: 900; border-radius: 6px;
+        }
+        .header-title {
+            font-family: 'Barlow Condensed', sans-serif;
+            font-size: 32px; font-weight: 900;
+            letter-spacing: 3px; text-transform: uppercase;
+        }
+        .header-sub { font-size: 12px; color: var(--dim); letter-spacing: 2px; text-transform: uppercase; margin-top: 2px; }
+        .header-right { text-align: right; }
+        .season { font-family: 'Barlow Condensed', sans-serif; font-size: 22px; font-weight: 700; color: var(--gold); letter-spacing: 2px; }
+        .updated { font-size: 11px; color: var(--dim); margin-top: 3px; }
+
+        /* ââ KPI ROW ââ */
+        .kpi-row {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 0;
+            border-bottom: 2px solid var(--border);
+            flex-shrink: 0;
+        }
+        .kpi {
+            padding: 20px 24px;
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+        .kpi:last-child { border-right: none; }
+        .kpi-label {
+            font-family: 'Barlow Condensed', sans-serif;
+            font-size: 12px; font-weight: 700;
+            letter-spacing: 3px; text-transform: uppercase;
+            color: var(--dim); margin-bottom: 8px;
+        }
+        .kpi-value {
+            font-family: 'Barlow Condensed', sans-serif;
+            font-size: 56px; font-weight: 900; line-height: 1;
+        }
+        .kpi-note { font-size: 12px; color: var(--dim); margin-top: 4px; }
+
+        /* ââ MAIN BODY ââ */
+        .body {
+            flex: 1;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            grid-template-rows: auto 1fr;
+            gap: 0;
+            overflow: hidden;
+        }
+
+        /* ââ OVERALL PROGRESS (left, spans full height) ââ */
+        .section {
+            padding: 28px 40px;
+            border-right: 1px solid var(--border);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+        }
+        .section.no-border-right { border-right: none; }
+        .section.no-border-bottom { border-bottom: none; }
+
+        .section-label {
+            font-family: 'Barlow Condensed', sans-serif;
+            font-size: 13px; font-weight: 700;
+            letter-spacing: 4px; text-transform: uppercase;
+            color: var(--dim); margin-bottom: 18px;
+        }
+
+        /* Large progress bar */
+        .big-progress-wrap { margin-bottom: 12px; }
+        .big-track {
+            height: 36px;
+            background: var(--surf2);
+            border-radius: 6px;
+            overflow: hidden;
+            position: relative;
+            margin-bottom: 8px;
+        }
+        .big-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #00a85a, var(--green));
+            border-radius: 6px;
+            transition: width 1.5s ease;
+            display: flex;
+            align-items: center;
+            padding-left: 12px;
+        }
+        .fill-label {
+            font-family: 'Barlow Condensed', sans-serif;
+            font-size: 16px; font-weight: 700;
+            color: #000;
+            white-space: nowrap;
+            opacity: 0.9;
+        }
+        .big-progress-caption {
+            font-family: 'Barlow Condensed', sans-serif;
+            font-size: 22px; font-weight: 700;
+            margin-bottom: 4px;
+        }
+        .big-progress-note { font-size: 14px; color: var(--dim); }
+
+        /* Bonus threshold marker */
+        .threshold-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 14px;
+            padding: 12px 16px;
+            background: rgba(255,209,58,0.06);
+            border: 1px solid rgba(255,209,58,0.2);
+            border-radius: 6px;
+        }
+        .threshold-icon { font-size: 20px; }
+        .threshold-text { font-size: 14px; }
+        .threshold-text strong { color: var(--gold); }
+
+        /* ââ STATUS DISTRIBUTION ââ */
+        .dist-chart-wrap { flex: 1; position: relative; min-height: 60px; margin-bottom: 14px; }
+        .dist-legend {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px 24px;
+        }
+        .legend-item { display: flex; align-items: center; gap: 8px; font-size: 13px; }
+        .legend-dot { width: 14px; height: 14px; border-radius: 3px; flex-shrink: 0; }
+        .legend-count { font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 15px; }
+
+        /* ââ DEPARTMENT LEADERBOARD ââ */
+        .dept-list { flex: 1; display: flex; flex-direction: column; gap: 10px; overflow: hidden; }
+        .dept-row {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 12px 16px;
+            background: var(--surf2);
+            border-radius: 6px;
+            border-left: 4px solid transparent;
+        }
+        .dept-rank {
+            font-family: 'Barlow Condensed', sans-serif;
+            font-size: 18px; font-weight: 900;
+            color: var(--dim); width: 24px; text-align: center; flex-shrink: 0;
+        }
+        .dept-name {
+            font-family: 'Barlow Condensed', sans-serif;
+            font-size: 18px; font-weight: 700;
+            flex: 1; text-transform: uppercase; letter-spacing: 1px;
+        }
+        .dept-score {
+            font-family: 'Barlow Condensed', sans-serif;
+            font-size: 22px; font-weight: 900;
+            width: 44px; text-align: right; flex-shrink: 0;
+        }
+        .dept-bar-wrap {
+            width: 160px; flex-shrink: 0;
+        }
+        .dept-track {
+            height: 10px; background: var(--border); border-radius: 3px; overflow: hidden;
+        }
+        .dept-fill { height: 100%; border-radius: 3px; }
+    </style>
+</head>
+<body>
+<div class="dashboard">
+
+    <!-- HEADER -->
+    <div class="header">
+        <div class="header-left">
+            <div class="logo-x">X</div>
+            <div>
+                <div class="header-title">Team Goals Summary</div>
+                <div class="header-sub">All departments Â· 2025â26</div>
+            </div>
+        </div>
+        <div class="header-right">
+            <div class="season">2025â26</div>
+            <div class="updated" id="updated">Updatingâ¦</div>
+        </div>
+    </div>
+
+    <!-- KPI ROW -->
+    <div class="kpi-row">
+        <div class="kpi">
+            <div class="kpi-label">Total Goals</div>
+            <div class="kpi-value" style="color:var(--text)" id="k-total">27</div>
+            <div class="kpi-note">Across 9 departments</div>
+        </div>
+        <div class="kpi">
+            <div class="kpi-label">Completed</div>
+            <div class="kpi-value" style="color:var(--green)" id="k-complete">â</div>
+            <div class="kpi-note" id="k-complete-note">goals done</div>
+        </div>
+        <div class="kpi">
+            <div class="kpi-label">On Track</div>
+            <div class="kpi-value" style="color:var(--blue)" id="k-ontrack">â</div>
+            <div class="kpi-note">expected on time</div>
+        </div>
+        <div class="kpi">
+            <div class="kpi-label">At Risk</div>
+            <div class="kpi-value" style="color:var(--gold)" id="k-atrisk">â</div>
+            <div class="kpi-note">need attention</div>
+        </div>
+        <div class="kpi">
+            <div class="kpi-label">Off Track</div>
+            <div class="kpi-value" style="color:var(--red)" id="k-offtrack">â</div>
+            <div class="kpi-note">behind or stalled</div>
+        </div>
+        <div class="kpi">
+            <div class="kpi-label">% Complete</div>
+            <div class="kpi-value" style="color:var(--text)" id="k-pct">â</div>
+            <div class="kpi-note">of all 27 goals</div>
+        </div>
+    </div>
+
+    <!-- MAIN BODY -->
+    <div class="body">
+
+        <!-- OVERALL PROGRESS + THRESHOLD -->
+        <div class="section">
+            <div class="section-label">Overall Progress</div>
+            <div class="big-progress-wrap">
+                <div class="big-track">
+                    <div class="big-fill" id="main-fill" style="width:0%">
+                        <span class="fill-label" id="fill-label"></span>
+                    </div>
+                </div>
+                <div class="big-progress-caption" id="progress-caption">Loadingâ¦</div>
+                <div class="big-progress-note" id="progress-note"></div>
+            </div>
+            <div class="threshold-row" id="threshold-row">
+                <div class="threshold-icon">ð¯</div>
+                <div class="threshold-text" id="threshold-text">Loading bonus threshold statusâ¦</div>
+            </div>
+        </div>
+
+        <!-- STATUS DISTRIBUTION -->
+        <div class="section no-border-right">
+            <div class="section-label">Goal Status Distribution</div>
+            <div class="dist-chart-wrap">
+                <canvas id="distChart"></canvas>
+            </div>
+            <div class="dist-legend" id="dist-legend"></div>
+        </div>
+
+        <!-- BY DEPARTMENT -->
+        <div class="section no-border-bottom" style="grid-column: 1 / -1; border-right: none;">
+            <div class="section-label">By Department â Leaderboard</div>
+            <div class="dept-list" id="dept-list">
+                <div style="color:var(--dim);font-size:14px;">Loading department dataâ¦</div>
+            </div>
+        </div>
+
+    </div><!-- /body -->
+
+</div><!-- /dashboard -->
+
+<script>
+    const CONFIG = {
+        goalsSheetUrl: 'https://docs.google.com/spreadsheets/d/1VumQnhFi2siIvaWHPZ1LuMdFiqI6ifjS_sHJIAKRi4c/export?format=csv&gid=368453036'
+    };
+
+    const DEPT_NAMES = ['AV','Design','Expo','Finance','People, Culture & Performance','Permanent','Production','Systems','Warehouse'];
+    const DEPT_SHORT = { 'People, Culture & Performance': 'People & Culture' };
+    const STATUS_COLORS = {
+        'Completed':   '#00E887',
+        'On Track':    '#00CFFF',
+        'At Risk':     '#FFD13A',
+        'Off Track':   '#FF4455',
+        'Not Started': '#334155',
+        'AI Risk':     '#9A7AB3'
+    };
+    const STATUS_ORDER = ['Completed','On Track','At Risk','Off Track','AI Risk','Not Started'];
+    const TOTAL = 27;
+    const BONUS_THRESHOLD = 14;
+
+    let distChart;
+
+    function parseCSVLine(line) {
+        const res = []; let cur = ''; let inQ = false;
+        for (let i = 0; i < line.length; i++) {
+            const c = line[i];
+            if (c === '"') { if (inQ && line[i+1] === '"') { cur += '"'; i++; } else inQ = !inQ; }
+            else if (c === ',' && !inQ) { res.push(cur.trim()); cur = ''; }
+            else cur += c;
+        }
+        res.push(cur.trim());
+        return res;
+    }
+
+    function processGoals(csv) {
+        const lines = csv.split('\n');
+        const statuses = {};
+        STATUS_ORDER.forEach(k => statuses[k] = 0);
+        const depts = {};
+        DEPT_NAMES.forEach(d => depts[d] = { completed: 0, total: 3 });
+
+        lines.forEach((line, idx) => {
+            if (idx > 0 && line.trim()) {
+                const cols = parseCSVLine(line);
+                const dept = (cols[0] || '').trim();
+                if (!DEPT_NAMES.includes(dept)) return;
+                const status = (cols[5] || '').trim() || 'Not Started';
+
+                if (status.includes('Completed'))       { statuses['Completed']++;  depts[dept].completed++; }
+                else if (status.includes('On Track'))   statuses['On Track']++;
+                else if (status.includes('Off Track'))  statuses['Off Track']++;
+                else if (status.includes('At Risk'))    statuses['At Risk']++;
+                else if (status.includes('AI Risk'))    statuses['AI Risk']++;
+                else                                    statuses['Not Started']++;
+            }
+        });
+
+        window.summaryData = { statuses, depts };
+    }
+
+    function render() {
+        if (!window.summaryData) return;
+        const { statuses, depts } = window.summaryData;
+        const comp     = statuses['Completed'] || 0;
+        const ontrack  = statuses['On Track']  || 0;
+        const atrisk   = statuses['At Risk']   || 0;
+        const offtrack = statuses['Off Track'] || 0;
+        const pct      = Math.round((comp / TOTAL) * 100);
+        const need     = Math.max(0, BONUS_THRESHOLD - comp);
+
+        // KPI cards
+        set('k-complete',      comp);
+        set('k-complete-note', comp === 1 ? 'goal done' : 'goals done');
+        set('k-ontrack',       ontrack);
+        set('k-atrisk',        atrisk);
+        set('k-offtrack',      offtrack);
+        set('k-pct',           pct + '%');
+
+        // Progress bar â fill proportional to 27
+        const fillPct = Math.round((comp / TOTAL) * 100);
+        document.getElementById('main-fill').style.width = fillPct + '%';
+        set('fill-label', fillPct >= 10 ? comp + ' of ' + TOTAL : '');
+        set('progress-caption', comp + ' of ' + TOTAL + ' goals completed');
+        set('progress-note', pct + '% complete â target is 50% (14 goals) to unlock bonus');
+
+        // Threshold banner
+        const threshEl = document.getElementById('threshold-row');
+        if (comp >= BONUS_THRESHOLD) {
+            threshEl.style.borderColor = 'rgba(0,232,135,0.3)';
+            threshEl.style.background  = 'rgba(0,232,135,0.06)';
+            set('threshold-text', 'â Bonus threshold reached â 14 or more goals complete');
+        } else {
+            threshEl.style.borderColor = 'rgba(255,209,58,0.2)';
+            threshEl.style.background  = 'rgba(255,209,58,0.06)';
+            set('threshold-text', need + ' more goal' + (need !== 1 ? 's' : '') + ' needed to unlock the bonus (target: 14 of 27 complete)');
+        }
+
+        // Distribution chart
+        renderDist(statuses);
+
+        // Dept leaderboard
+        renderDepts(depts);
+
+        // Timestamp
+        const now = new Date();
+        set('updated', 'Updated ' + now.toLocaleString('en-AU',{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit',hour12:true}));
+    }
+
+    function renderDist(statuses) {
+        const activeKeys = STATUS_ORDER.filter(k => (statuses[k] || 0) > 0);
+        if (distChart) distChart.destroy();
+        distChart = new Chart(document.getElementById('distChart'), {
+            type: 'bar',
+            data: {
+                labels: [''],
+                datasets: STATUS_ORDER.map(k => ({
+                    label: k,
+                    data: [statuses[k] || 0],
+                    backgroundColor: STATUS_COLORS[k],
+                    borderRadius: 3
+                }))
+            },
+            options: {
+                indexAxis: 'y',
+                responsive: true, maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: { stacked: true, max: TOTAL, display: true, grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#8896B0', font: { size: 11 }, stepSize: 3 } },
+                    y: { stacked: true, display: false }
+                },
+                layout: { padding: { top: 2 } }
+            }
+        });
+
+        // Legend
+        document.getElementById('dist-legend').innerHTML = STATUS_ORDER.map(k => {
+            const n = statuses[k] || 0;
+            return `<div class="legend-item">
+                <div class="legend-dot" style="background:${STATUS_COLORS[k]}"></div>
+                <span>${k}</span>
+                <span class="legend-count">${n}</span>
+            </div>`;
+        }).join('');
+    }
+
+    function renderDepts(depts) {
+        // Sort: completed desc, then name
+        const sorted = DEPT_NAMES.slice().sort((a, b) => {
+            const ca = depts[a]?.completed || 0;
+            const cb = depts[b]?.completed || 0;
+            return cb - ca || a.localeCompare(b);
+        });
+
+        const listEl = document.getElementById('dept-list');
+        listEl.innerHTML = sorted.map((dept, i) => {
+            const d = depts[dept] || { completed: 0, total: 3 };
+            const fillPct = Math.round((d.completed / d.total) * 100);
+            const name = DEPT_SHORT[dept] || dept;
+            const medal = i === 0 && d.completed > 0 ? 'ð¥ ' : '';
+
+            // Color by completion
+            const scoreColor = d.completed === 3 ? 'var(--green)'
+                             : d.completed === 2 ? 'var(--blue)'
+                             : d.completed === 1 ? 'var(--gold)'
+                             : 'var(--dim)';
+            const borderColor = d.completed === 3 ? 'var(--green)'
+                              : d.completed >= 1 ? 'var(--blue)'
+                              : 'var(--border)';
+            const fillColor = d.completed === 3 ? '#00E887'
+                            : d.completed === 2 ? '#00CFFF'
+                            : d.completed === 1 ? '#FFD13A'
+                            : '#334155';
+
+            return `<div class="dept-row" style="border-left-color:${borderColor}">
+                <div class="dept-rank">${i + 1}</div>
+                <div class="dept-name">${medal}${name}</div>
+                <div class="dept-bar-wrap">
+                    <div class="dept-track">
+                        <div class="dept-fill" style="width:${fillPct}%;background:${fillColor}"></div>
+                    </div>
+                </div>
+                <div class="dept-score" style="color:${scoreColor}">${d.completed}/${d.total}</div>
+            </div>`;
+        }).join('');
+    }
+
+    function set(id, val) { const el = document.getElementById(id); if (el) el.textContent = val; }
+
+    async function fetchData() {
+        try {
+            const csv = await fetch(CONFIG.goalsSheetUrl).then(r => r.text());
+            processGoals(csv);
+        } catch (e) {
+            console.error('Fetch error:', e);
+        }
+        render();
+    }
+
+    fetchData();
+    setInterval(fetchData, 900000);
+</script>
+</body>
+</html>
