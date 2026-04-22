@@ -2,7 +2,8 @@
   "rewrites": [
     { "source": "/bonus",             "destination": "/v2-bonus-dashboard" },
     { "source": "/goals-summary",     "destination": "/v2-goals-summary" },
-    { "source": "/goals-departments", "destination": "/v2-goals-departments" }
+    { "source": "/goals-departments", "destination": "/v2-goals-departments" },
+    { "source": "/bonus-rings",       "destination": "/v3-bonus-rings" }
   ],
   "cleanUrls": true,
   "headers": [
