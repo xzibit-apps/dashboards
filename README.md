@@ -80,6 +80,20 @@ python3 -m http.server 8000
 
 Then visit `http://localhost:8000/` — note the clean-slug routes (`/bonus` etc.) only work on the Vercel deploy, not local.
 
+## Operations · data freshness states
+
+Each dashboard shows a small dot next to the last-updated timestamp in the top-right corner. The dot colour reflects how recently data was successfully fetched from the Google Sheet:
+
+| Dot colour | State | Meaning |
+|---|---|---|
+| Green (solid) | `fresh` | Data fetched less than 20 minutes ago |
+| Gold (pulsing) | `stale` | Last fetch was 20–45 minutes ago — check network or sheet access |
+| Red (pulsing) | `broken` | No successful fetch yet, or last fetch was over 45 minutes ago — verify the sheet is still shared publicly |
+
+The freshness state is re-evaluated every minute (`setInterval(updateFreshness, 60000)`) even if no new data is fetched. A broken state on first load (before the first fetch completes) is expected and will clear within seconds.
+
+If the sheet returns an HTML login page (Google's sign-in wall), the dashboards log a `console.warn` and do not update `lastSuccessAt`, so the dot turns red. Fix: ensure the sheet is shared as **"Anyone with the link → Viewer"**.
+
 ## Deploy
 
 Canonical deploy: **https://xzibit-dashboards.vercel.app** under `jnebauers-projects` on Vercel. Auto-deploys on push to `main`.
