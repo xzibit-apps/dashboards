@@ -97,3 +97,5 @@ If the sheet returns an HTML login page (Google's sign-in wall), the dashboards 
 ## Deploy
 
 Canonical deploy: **https://xzibit-dashboards.vercel.app** under `jnebauers-projects` on Vercel. Auto-deploys on push to `main`.
+
+Run `node scripts/smoke.js` after any prod deploy for a quick anchor check. This is not TV QA — that's Joel walking past the screens.

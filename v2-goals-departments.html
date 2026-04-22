@@ -252,23 +252,23 @@
             <div class="logo-x">X</div>
             <div>
                 <div class="header-title">Department Goals</div>
-                <div class="dept-headline" id="dept-name">Loading…</div>
+                <div class="dept-headline" id="dept-name"></div>
             </div>
         </div>
 
         <div class="header-center">
             <div class="progress-ticker">
-                <div class="ticker-value" id="dept-score" style="color:var(--green)">—</div>
+                <div class="ticker-value" id="dept-score" style="color:var(--green)"></div>
                 <div>
                     <div class="ticker-label">Goals Completed</div>
-                    <div class="ticker-label" id="dept-rank" style="margin-top:3px;">—</div>
+                    <div class="ticker-label" id="dept-rank" style="margin-top:3px;"></div>
                 </div>
             </div>
         </div>
 
         <div class="header-right">
             <div class="season">2025–26</div>
-            <div class="updated" id="updated">Updating…</div>
+            <div class="updated" id="updated"></div>
         </div>
     </div>
 
@@ -581,6 +581,7 @@
         el.className = 'updated ' + state;
         if (state === 'fresh')       el.textContent = 'Updated ' + timestamp;
         else if (state === 'stale')  el.textContent = 'Updated ' + timestamp + ' · stale';
+        else if (state === 'cached') el.textContent = 'Updated ' + timestamp + ' · cached';
         else                         el.textContent = 'DATA STALE · check sheet access';
     }
 
@@ -605,8 +606,12 @@
             } else {
                 processGoals(csv);
                 const hasGoals = (window.gd?.goals || []).length > 0;
-                if (hasGoals) lastSuccessAt = Date.now();
-                else console.warn('[goals-depts] Parse returned no goal rows — not marking as fresh');
+                if (hasGoals) {
+                    lastSuccessAt = Date.now();
+                    try {
+                        localStorage.setItem('xzdash.goals.v1', JSON.stringify({ csv: csv, at: lastSuccessAt }));
+                    } catch (_) {}
+                } else console.warn('[goals-depts] Parse returned no goal rows — not marking as fresh');
             }
         } catch (e) {
             console.error('[goals-depts] Fetch error:', e);
@@ -614,6 +619,21 @@
         renderDept(currentIdx);
         updateFreshness();
     }
+
+    (function bootCache() {
+        try {
+            const glsRaw = localStorage.getItem('xzdash.goals.v1');
+            if (!glsRaw) return;
+            const glsC = JSON.parse(glsRaw);
+            if (Date.now() - glsC.at > 86400000) return;
+            processGoals(glsC.csv);
+            renderDept(currentIdx);
+            const ts = new Date(glsC.at).toLocaleString('en-AU', {
+                hour: '2-digit', minute: '2-digit', hour12: true
+            });
+            renderFreshness('cached', ts);
+        } catch (_) {}
+    })();
 
     fetchData();
     resetCarousel();

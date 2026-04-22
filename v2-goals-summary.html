@@ -287,17 +287,17 @@
         </div>
         <div class="header-right">
             <div class="season">2025–26</div>
-            <div class="updated" id="updated">Updating…</div>
+            <div class="updated" id="updated"></div>
         </div>
     </div>
 
     <!-- HERO + STATS STRIP -->
     <div class="hero-strip">
         <div class="hero-wrap">
-            <div class="hero-number" id="hero-number">—</div>
+            <div class="hero-number" id="hero-number"></div>
             <div class="hero-text">
                 <div class="hero-label" id="hero-label">Goals to unlock the 2% bonus</div>
-                <div class="hero-headline" id="hero-headline">Loading…</div>
+                <div class="hero-headline" id="hero-headline"></div>
                 <div class="hero-sub" id="hero-sub"></div>
             </div>
         </div>
@@ -308,23 +308,23 @@
             </div>
             <div class="stat-cell">
                 <div class="stat-lbl">Completed</div>
-                <div class="stat-num" id="k-complete" style="color:var(--green)">—</div>
+                <div class="stat-num" id="k-complete" style="color:var(--green)"></div>
             </div>
             <div class="stat-cell">
                 <div class="stat-lbl">On Track</div>
-                <div class="stat-num" id="k-ontrack" style="color:var(--blue)">—</div>
+                <div class="stat-num" id="k-ontrack" style="color:var(--blue)"></div>
             </div>
             <div class="stat-cell">
                 <div class="stat-lbl">At Risk</div>
-                <div class="stat-num" id="k-atrisk" style="color:var(--gold)">—</div>
+                <div class="stat-num" id="k-atrisk" style="color:var(--gold)"></div>
             </div>
             <div class="stat-cell">
                 <div class="stat-lbl">Off Track</div>
-                <div class="stat-num" id="k-offtrack" style="color:var(--red)">—</div>
+                <div class="stat-num" id="k-offtrack" style="color:var(--red)"></div>
             </div>
             <div class="stat-cell">
                 <div class="stat-lbl">% Complete</div>
-                <div class="stat-num" id="k-pct" style="color:var(--text)">—</div>
+                <div class="stat-num" id="k-pct" style="color:var(--text)"></div>
             </div>
         </div>
     </div>
@@ -341,12 +341,12 @@
                         <span class="fill-label" id="fill-label"></span>
                     </div>
                 </div>
-                <div class="big-progress-caption" id="progress-caption">Loading…</div>
+                <div class="big-progress-caption" id="progress-caption"></div>
                 <div class="big-progress-note" id="progress-note"></div>
             </div>
             <div class="threshold-row" id="threshold-row">
                 <div class="threshold-icon">🎯</div>
-                <div class="threshold-text" id="threshold-text">Loading bonus threshold status…</div>
+                <div class="threshold-text" id="threshold-text"></div>
             </div>
         </div>
 
@@ -366,11 +366,11 @@
             <div class="dept-cols">
                 <div class="dept-col">
                     <div class="dept-col-label">Carrying the Load</div>
-                    <div class="dept-list" id="dept-leaders"><div style="color:var(--dim);font-size:13px;">Loading…</div></div>
+                    <div class="dept-list" id="dept-leaders"></div>
                 </div>
                 <div class="dept-col">
                     <div class="dept-col-label">Needs Support</div>
-                    <div class="dept-list" id="dept-support"><div style="color:var(--dim);font-size:13px;">Loading…</div></div>
+                    <div class="dept-list" id="dept-support"></div>
                 </div>
             </div>
         </div>
@@ -498,7 +498,7 @@
         document.getElementById('main-fill').style.width = fillPct + '%';
         set('fill-label', fillPct >= 10 ? comp + ' of ' + TOTAL : '');
         set('progress-caption', comp + ' of ' + TOTAL + ' goals completed');
-        set('progress-note', pct + '% complete \u2014 target is 50% (14 goals) to unlock bonus');
+        set('progress-note', pct + '% completed \u2014 target is 50% (14 goals) to unlock bonus');
 
         const threshEl = document.getElementById('threshold-row');
         if (comp >= BONUS_THRESHOLD) {
@@ -508,7 +508,7 @@
         } else {
             threshEl.style.borderColor = 'rgba(255,209,58,0.2)';
             threshEl.style.background  = 'rgba(255,209,58,0.06)';
-            set('threshold-text', need + ' more goal' + (need !== 1 ? 's' : '') + ' needed to unlock the bonus (target: 14 of 27 complete)');
+            set('threshold-text', need + ' more goal' + (need !== 1 ? 's' : '') + ' needed to unlock the bonus (target: 14 of 27 completed)');
         }
 
         // Hero area
@@ -521,12 +521,12 @@
             set('hero-number',   '\u2713');
             set('hero-label',    'Goals bonus');
             set('hero-headline', 'GOALS BONUS SECURED');
-            set('hero-sub',      comp + ' of ' + BONUS_THRESHOLD + ' threshold goals complete');
+            set('hero-sub',      comp + ' of ' + BONUS_THRESHOLD + ' threshold goals completed');
         } else {
             set('hero-number',   need);
             set('hero-label',    'Goals to unlock the 2% bonus');
             set('hero-headline', 'GOALS TO UNLOCK THE 2% BONUS');
-            set('hero-sub',      comp + ' of ' + BONUS_THRESHOLD + ' complete \u00b7 ~' + weeksLeft + ' weeks remaining');
+            set('hero-sub',      comp + ' of ' + BONUS_THRESHOLD + ' completed \u00b7 ~' + weeksLeft + ' weeks left');
         }
 
         // Projection line (suppressed once bonus secured)
@@ -535,7 +535,7 @@
         if (projEl && comp < BONUS_THRESHOLD) {
             projEl.style.display = '';
             projEl.style.color   = projected >= BONUS_THRESHOLD ? 'var(--green)' : projected >= 10 ? 'var(--gold)' : 'var(--red)';
-            projEl.textContent   = 'At current rate: ' + projected + ' of ' + TOTAL + ' will be complete by 30 Jun 2026';
+            projEl.textContent   = 'At current rate: ' + projected + ' of ' + TOTAL + ' will be completed by 30 Jun 2026';
         } else if (projEl) {
             projEl.style.display = 'none';
         }
@@ -641,6 +641,7 @@
         el.className = 'updated ' + state;
         if (state === 'fresh')       el.textContent = 'Updated ' + timestamp;
         else if (state === 'stale')  el.textContent = 'Updated ' + timestamp + ' · stale';
+        else if (state === 'cached') el.textContent = 'Updated ' + timestamp + ' · cached';
         else                         el.textContent = 'DATA STALE · check sheet access';
     }
 
@@ -665,8 +666,12 @@
             } else {
                 processGoals(csv);
                 const hasGoals = (window.gd?.goals || []).length > 0;
-                if (hasGoals) lastSuccessAt = Date.now();
-                else console.warn('[goals-summary] Parse returned no goal rows — not marking as fresh');
+                if (hasGoals) {
+                    lastSuccessAt = Date.now();
+                    try {
+                        localStorage.setItem('xzdash.goals.v1', JSON.stringify({ csv: csv, at: lastSuccessAt }));
+                    } catch (_) {}
+                } else console.warn('[goals-summary] Parse returned no goal rows — not marking as fresh');
             }
         } catch (e) {
             console.error('[goals-summary] Fetch error:', e);
@@ -674,6 +679,21 @@
         render();
         updateFreshness();
     }
+
+    (function bootCache() {
+        try {
+            const glsRaw = localStorage.getItem('xzdash.goals.v1');
+            if (!glsRaw) return;
+            const glsC = JSON.parse(glsRaw);
+            if (Date.now() - glsC.at > 86400000) return;
+            processGoals(glsC.csv);
+            render();
+            const ts = new Date(glsC.at).toLocaleString('en-AU', {
+                hour: '2-digit', minute: '2-digit', hour12: true
+            });
+            renderFreshness('cached', ts);
+        } catch (_) {}
+    })();
 
     fetchData();
     setInterval(fetchData, 900000);
