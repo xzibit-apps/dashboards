@@ -443,16 +443,18 @@
         goalsSheetUrl:     'https://docs.google.com/spreadsheets/d/1VumQnhFi2siIvaWHPZ1LuMdFiqI6ifjS_sHJIAKRi4c/export?format=csv&gid=368453036'
     };
 
-    const DEPT_NAMES = ['AV','Design','Expo','Finance','People, Culture & Performance','Permanent','Production','Systems','Warehouse'];
+    const DEPT_NAMES   = ['AV','Design','Expo','Finance','People, Culture & Performance','Permanent','Production','Systems','Warehouse'];
     const MONTH_LABELS = ['Jul','Aug','Sep','Oct','Nov','Dec','Jan','Feb','Mar','Apr','May','Jun'];
-    const REV_TARGET = 10342000;
-    const MGN_TARGET = 31.66;
-    const GOALS_TOTAL = 27;
-    const GOALS_BONUS = 14; // 50% threshold
+
+    const REV_TARGET  = 10342000; // FALLBACK — overridden by sheet parse
+    const MGN_FLOOR   = 31.7;     // FALLBACK — overridden by sheet parse
+    const MGN_STRETCH = 33.7;     // FALLBACK — overridden by sheet parse
+    const GOALS_TOTAL = 27;       // FALLBACK — overridden by sheet parse
+    const GOALS_BONUS = 14;       // FALLBACK — overridden by sheet parse
 
     let revenueChart, marginChart, goalsChart;
 
-    // ââ Data ââââââââââââââââââââââââââââââââââââââââââ
+    // ── Data ─────────────────────────────────────────────────────────────────
     function parseCSVLine(line) {
         const result = []; let current = ''; let inQuotes = false;
         for (let i = 0; i < line.length; i++) {
@@ -466,94 +468,166 @@
     }
     function parseNum(v) { return parseFloat(String(v).replace(/[$,%"]/g,'').trim()) || 0; }
 
+    // ── Bonus formula ────────────────────────────────────────────────────────
+    function computeBonus({ ytdActualIncome, incomeTarget, ytdMargin, marginFloor, marginStretch, goalsCompleted, goalsThreshold }) {
+        const incomeBonus   = ytdActualIncome >= incomeTarget ? 1.0 : 0.0;
+        const incomeSecured = incomeBonus === 1.0;
+        let marginBonus;
+        if (ytdMargin >= marginStretch)    marginBonus = 2.0;
+        else if (ytdMargin >= marginFloor) marginBonus = 1.0 + ((ytdMargin - marginFloor) / (marginStretch - marginFloor));
+        else                               marginBonus = 0.0;
+        const marginSecured = false; // margin is never "secured" before EOFY
+        const goalsBonus    = goalsCompleted >= goalsThreshold ? 2.0 : 0.0;
+        const goalsSecured  = goalsBonus === 2.0;
+        return {
+            income: { earned: incomeBonus,  max: 1.0, secured: incomeSecured },
+            margin: { earned: marginBonus,  max: 2.0, secured: marginSecured },
+            goals:  { earned: goalsBonus,   max: 2.0, secured: goalsSecured },
+            total:  { earned: incomeBonus + marginBonus + goalsBonus, max: 5.0 },
+        };
+    }
+
+    // Map normalised row label → fd property name.
+    const FINANCIAL_LABELS = {
+        'budget income':                'monthlyBudgetIncome',
+        'cumulative budget income':     'cumulativeBudgetIncome',
+        'budget cumulative gp margin':  'cumulativeBudgetMargin',
+        'target cumulative gp margin':  'cumulativeTargetMargin',
+        'cumulative actual income':     'cumulativeActualIncome',
+        'total actual income (fathom)': 'monthlyActualIncome',
+        'actual gp margin':             'monthlyActualMargin',
+        'cumulative gross profit':      'cumulativeGrossProfit',
+    };
+    // These rows may be stored as decimals (0.317) and need ×100 normalisation
+    const MARGIN_PROPS = new Set(['cumulativeBudgetMargin','cumulativeTargetMargin','monthlyActualMargin']);
+
     function processFinancial(csv) {
         const lines = csv.split('\n');
-        const fd = { monthlyRevenue: [], margins: [] };
-        lines.forEach((line, idx) => {
-            if (idx === 12) {
-                fd.monthlyRevenue = parseCSVLine(line).slice(1, 13).map(parseNum);
-                fd.actualRevenue  = fd.monthlyRevenue.reduce((a,b) => a+b, 0);
-            }
-            if (idx === 15) {
-                fd.margins = parseCSVLine(line).slice(1, 13).map(v => {
-                    const n = parseNum(v);
-                    return (n > 0 && n < 1) ? n * 100 : n;
-                });
-                const nonZero = fd.margins.filter(m => m > 0);
-                fd.currentMargin = nonZero.length ? nonZero[nonZero.length - 1] : 0;
+        const fd = {};
+
+        lines.forEach(line => {
+            const cols  = parseCSVLine(line);
+            const label = (cols[0] || '').trim().toLowerCase();
+            const prop  = FINANCIAL_LABELS[label];
+            if (!prop) return;
+            fd[prop] = cols.slice(1, 13).map(v => {
+                const n = parseNum(v);
+                return (MARGIN_PROPS.has(prop) && n > 0 && n < 1) ? n * 100 : n;
+            });
+        });
+
+        // Warn and substitute zeros for any row not found in the sheet
+        Object.values(FINANCIAL_LABELS).forEach(prop => {
+            if (!fd[prop]) {
+                console.warn('[bonus] Financial row not found for prop:', prop, '— using fallback zeros');
+                fd[prop] = Array(12).fill(0);
             }
         });
-        fd.revenueTarget = REV_TARGET;
-        fd.marginTarget  = MGN_TARGET;
+
+        // currentMonthIdx: index of rightmost non-zero in cumulativeActualIncome
+        let currentMonthIdx = 0;
+        fd.cumulativeActualIncome.forEach((v, i) => { if (v > 0) currentMonthIdx = i; });
+        fd.currentMonthIdx = currentMonthIdx;
+
+        const idx = currentMonthIdx;
+        fd.ytdActualIncome = fd.cumulativeActualIncome[idx] || 0;
+        // YTD margin derived from cumulative GP ÷ cumulative income — avoids monthly rate volatility
+        fd.ytdActualMargin = fd.cumulativeActualIncome[idx] > 0
+            ? (fd.cumulativeGrossProfit[idx] / fd.cumulativeActualIncome[idx]) * 100
+            : 0;
+        fd.incomeTarget  = fd.cumulativeBudgetIncome[11] || REV_TARGET;
+        fd.marginFloor   = MGN_FLOOR;    // structural floor; Config tab will supply this in a later PR
+        fd.marginStretch = MGN_STRETCH;  // structural stretch; Config tab will supply this in a later PR
+
         window.fd = fd;
     }
 
     function processGoals(csv) {
         const lines = csv.split('\n');
-        const gd = { completed: 0, total: GOALS_TOTAL, statuses: {} };
+        let headerCols = [];
+        const gd = { completed: 0, total: GOALS_TOTAL, statuses: {}, goals: [] };
         const statusKeys = ['Completed','On Track','At Risk','Off Track','Not Started','AI Risk'];
         statusKeys.forEach(k => gd.statuses[k] = 0);
 
         lines.forEach((line, idx) => {
-            if (idx > 0 && line.trim()) {
-                const cols = parseCSVLine(line);
-                const dept = (cols[0] || '').trim();
-                if (!DEPT_NAMES.includes(dept)) return;
-                const status = (cols[5] || '').trim() || 'Not Started';
-                if (status.includes('Completed'))  { gd.statuses['Completed']++;   gd.completed++; }
-                else if (status.includes('On Track'))  gd.statuses['On Track']++;
-                else if (status.includes('Off Track')) gd.statuses['Off Track']++;
-                else if (status.includes('At Risk'))   gd.statuses['At Risk']++;
-                else if (status.includes('AI Risk'))   gd.statuses['AI Risk']++;
-                else                                   gd.statuses['Not Started']++;
+            if (idx === 0) { headerCols = parseCSVLine(line); return; }
+            if (!line.trim()) return;
+            const cols = parseCSVLine(line);
+            const dept = (cols[0] || '').trim();
+            if (!DEPT_NAMES.includes(dept)) return;
+
+            // Scan cols[2]..cols[8] right-to-left for the latest non-empty review status
+            let rawStatus = '', reviewDate = '';
+            for (let ci = 8; ci >= 2; ci--) {
+                const v = (cols[ci] || '').trim();
+                if (v) { rawStatus = v; reviewDate = (headerCols[ci] || '').trim(); break; }
             }
+            if (!rawStatus) rawStatus = 'Not Started';
+
+            const title = (cols[1] || '').trim();
+            const note  = (cols[9] || '').trim();
+
+            if (rawStatus.includes('Completed'))       { gd.statuses['Completed']++;   gd.completed++; }
+            else if (rawStatus.includes('On Track'))     gd.statuses['On Track']++;
+            else if (rawStatus.includes('Off Track'))    gd.statuses['Off Track']++;
+            else if (rawStatus.includes('At Risk'))      gd.statuses['At Risk']++;
+            else if (rawStatus.includes('AI Risk'))      gd.statuses['AI Risk']++;
+            else                                          gd.statuses['Not Started']++;
+
+            gd.goals.push({ dept, title, currentStatus: rawStatus, reviewDate, note });
         });
         window.gd = gd;
     }
 
-    // ââ Render ââââââââââââââââââââââââââââââââââââââââ
+    // ── Render ───────────────────────────────────────────────────────────────
     function fmt(n) { return '$' + (n/1000000).toFixed(2) + 'M'; }
 
     function render() {
-        const rev    = window.fd?.actualRevenue  || 0;
-        const margin = window.fd?.currentMargin  || 0;
-        const comp   = window.gd?.completed      || 0;
-        const stats  = window.gd?.statuses       || {};
+        const rev    = window.fd?.ytdActualIncome || 0;
+        const margin = window.fd?.ytdActualMargin || 0;
+        const comp   = window.gd?.completed       || 0;
+        const stats  = window.gd?.statuses        || {};
 
-        // ââ REVENUE
-        const revPct  = Math.min((rev / REV_TARGET) * 100, 120);
-        const revDiff = rev - REV_TARGET;
-        const revMet  = rev >= REV_TARGET;
+        const incomeTarget = window.fd?.incomeTarget || REV_TARGET;
+        const marginFloor  = window.fd?.marginFloor  || MGN_FLOOR;
+
+        // ── REVENUE
+        const revPct  = Math.min((rev / incomeTarget) * 100, 120);
+        const revDiff = rev - incomeTarget;
+        const revMet  = rev >= incomeTarget;
 
         set('rev-value',    fmt(rev));
+        set('rev-target',   fmt(incomeTarget) + ' (full year)');
         set('rev-pct',      Math.round(revPct) + '% of target');
         set('rev-variance', (revDiff >= 0 ? '+' : '') + fmt(revDiff));
         cls('rev-variance', revDiff >= 0 ? 'metric-variance pos' : 'metric-variance neg');
         set('rev-interp', revMet ? 'On track to meet full-year target'
                                  : fmt(Math.abs(revDiff)) + ' behind full-year target');
-        bar('rev-bar', revPct, 100);
-        badge('rev-badge', revMet, 'â ON TARGET', 'â BEHIND TARGET');
+        bar('rev-bar', revPct);
+        badge('rev-badge', revMet, '\u2713 ON TARGET', '\u2717 BEHIND TARGET');
         checkIcon('chk-rev', revMet);
         set('chk-rev-note', revMet ? 'Full-year target met' : fmt(Math.abs(revDiff)) + ' behind target');
 
-        // ââ MARGIN
-        const mgnPct = Math.min((margin / MGN_TARGET) * 100, 120);
-        const mgnDiff = margin - MGN_TARGET;
-        const mgnMet  = margin >= MGN_TARGET;
+        // ── MARGIN (YTD cumulative — more stable than monthly rate)
+        const mgnPct  = Math.min((margin / marginFloor) * 100, 120);
+        const mgnDiff = margin - marginFloor;
+        const mgnMet  = margin >= marginFloor;
 
         set('mgn-value',    margin.toFixed(1) + '%');
+        set('mgn-target',   '\u2265' + marginFloor.toFixed(1) + '%');
         set('mgn-pct',      Math.round(mgnPct) + '% of target');
         set('mgn-variance', (mgnDiff >= 0 ? '+' : '') + Math.abs(mgnDiff).toFixed(1) + ' pts');
         cls('mgn-variance', mgnDiff >= 0 ? 'metric-variance pos' : 'metric-variance neg');
-        set('mgn-interp', mgnMet ? margin.toFixed(1) + '% â above target of ' + MGN_TARGET + '%'
-                                 : margin.toFixed(1) + '% â ' + Math.abs(mgnDiff).toFixed(1) + ' pts below target');
-        bar('mgn-bar', mgnPct, 100);
-        badge('mgn-badge', mgnMet, 'â ON TARGET', 'â BELOW TARGET', true);
+        set('mgn-interp', mgnMet ? margin.toFixed(1) + '% \u2014 above target of ' + marginFloor.toFixed(1) + '%'
+                                 : margin.toFixed(1) + '% \u2014 ' + Math.abs(mgnDiff).toFixed(1) + ' pts below target');
+        bar('mgn-bar', mgnPct);
+        badge('mgn-badge', mgnMet, '\u2713 ON TARGET', '\u2717 BELOW TARGET', true);
         checkIcon('chk-mgn', mgnMet);
-        set('chk-mgn-note', mgnMet ? 'Above ' + MGN_TARGET + '% threshold' : Math.abs(mgnDiff).toFixed(1) + ' pts below threshold');
+        set('chk-mgn-note', mgnMet ? 'Above ' + marginFloor.toFixed(1) + '% threshold'
+                                   : Math.abs(mgnDiff).toFixed(1) + ' pts below threshold');
 
-        // ââ GOALS
-        const glsPct = Math.min((comp / GOALS_BONUS) * 100, 120);
+        // ── GOALS
+        const glsPct  = Math.min((comp / GOALS_BONUS) * 100, 120);
         const glsMet  = comp >= GOALS_BONUS;
         const glsNeed = Math.max(0, GOALS_BONUS - comp);
 
@@ -564,35 +638,44 @@
         cls('gls-variance', glsMet ? 'metric-variance pos' : 'metric-variance neg');
         set('gls-interp', glsMet ? 'Bonus goal threshold reached!'
                                  : glsNeed + ' more goal' + (glsNeed !== 1 ? 's' : '') + ' required to unlock bonus');
-        bar('gls-bar', Math.min((comp/GOALS_TOTAL)*100*2, 100), 100); // bar is out of 50%
-        badge('gls-badge', glsMet, 'â ACHIEVED', 'â BELOW TARGET');
+        bar('gls-bar', Math.min((comp/GOALS_TOTAL)*100*2, 100));
+        badge('gls-badge', glsMet, '\u2713 ACHIEVED', '\u2717 BELOW TARGET');
         checkIcon('chk-gls', glsMet);
-        set('chk-gls-note', glsMet ? 'Bonus threshold reached' : glsNeed + ' more goal' + (glsNeed!==1?'s':'') + ' to unlock');
+        set('chk-gls-note', glsMet ? 'Bonus threshold reached'
+                                   : glsNeed + ' more goal' + (glsNeed!==1?'s':'') + ' to unlock');
 
-        // ââ BONUS BANNER
+        // ── BONUS BANNER
         const metCount = (revMet ? 1 : 0) + (mgnMet ? 1 : 0) + (glsMet ? 1 : 0);
         set('banner-headline', 'BONUS STATUS: ' + metCount + ' OF 3 METRICS MET');
         const pill = document.getElementById('bonus-pill');
         if (metCount === 3) {
-            pill.textContent = 'ð UNLOCKED'; pill.className = 'status-pill unlocked';
+            pill.textContent = '\uD83C\uDF89 UNLOCKED'; pill.className = 'status-pill unlocked';
         } else if (metCount === 2) {
-            pill.textContent = 'â  AT RISK'; pill.className = 'status-pill at-risk';
+            pill.textContent = '\u26A0 AT RISK'; pill.className = 'status-pill at-risk';
         } else {
-            pill.textContent = 'ð LOCKED'; pill.className = 'status-pill locked';
+            pill.textContent = '\uD83D\uDD12 LOCKED'; pill.className = 'status-pill locked';
         }
 
         renderCharts(stats, comp);
+
+        // Bonus formula on window for dev console inspection — not surfaced in UI
+        window.bonus = computeBonus({
+            ytdActualIncome: rev,
+            incomeTarget,
+            ytdMargin:     margin,
+            marginFloor,
+            marginStretch: window.fd?.marginStretch || MGN_STRETCH,
+            goalsCompleted: comp,
+            goalsThreshold: GOALS_BONUS,
+        });
+
         const now = new Date();
         set('updated', 'Updated ' + now.toLocaleString('en-AU',{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit',hour12:true}));
     }
 
     function set(id, txt) { const el = document.getElementById(id); if (el) el.textContent = txt; }
     function cls(id, c)   { const el = document.getElementById(id); if (el) el.className = c; }
-
-    function bar(id, pct, max) {
-        const el = document.getElementById(id);
-        if (el) el.style.width = Math.min(pct, 100) + '%';
-    }
+    function bar(id, pct) { const el = document.getElementById(id); if (el) el.style.width = Math.min(pct, 100) + '%'; }
 
     function badge(id, pass, passText, failText, gold) {
         const el = document.getElementById(id);
@@ -604,11 +687,11 @@
     function checkIcon(id, pass) {
         const el = document.getElementById(id);
         if (!el) return;
-        el.textContent = pass ? 'â' : 'â';
+        el.textContent = pass ? '\u2713' : '\u2717';
         el.className = 'check-icon ' + (pass ? 'pass' : 'fail');
     }
 
-    // ââ Charts ââââââââââââââââââââââââââââââââââââââââ
+    // ── Charts ────────────────────────────────────────────────────────────────
     const STATUS_COLORS = {
         'Completed':   '#00E887',
         'On Track':    '#00CFFF',
@@ -618,7 +701,6 @@
         'AI Risk':     '#9A7AB3'
     };
 
-    // Plugin: dashed target line on line charts
     Chart.register({
         id: 'dashedTarget',
         afterDraw(chart) {
@@ -646,147 +728,98 @@
     });
 
     function renderCharts(stats, comp) {
-        const active = (window.fd?.monthlyRevenue || []).map((v,i) => v > 0 ? i : -1).filter(i => i >= 0);
-        const lastIdx = active.length;
-        const revData   = (window.fd?.monthlyRevenue || []).slice(0, lastIdx);
-        const mgnData   = (window.fd?.margins || []).slice(0, lastIdx);
-        const labels    = MONTH_LABELS.slice(0, Math.max(lastIdx, 3));
-        const monthlyTarget = REV_TARGET / 12;
+        const lastIdx      = window.fd?.currentMonthIdx !== undefined ? window.fd.currentMonthIdx + 1 : 0;
+        const revData      = (window.fd?.monthlyActualIncome || []).slice(0, lastIdx);
+        const mgnData      = (window.fd?.monthlyActualMargin || []).slice(0, lastIdx).map(v =>
+            (v > 0 && v < 1) ? v * 100 : v
+        );
+        const labels       = MONTH_LABELS.slice(0, Math.max(lastIdx, 3));
+        const incomeTarget = window.fd?.incomeTarget || REV_TARGET;
+        const marginFloor  = window.fd?.marginFloor  || MGN_FLOOR;
+        const monthlyBudget = incomeTarget / 12;
 
-        // Revenue chart
         if (revenueChart) revenueChart.destroy();
         revenueChart = new Chart(document.getElementById('revenueChart'), {
             type: 'line',
             data: {
-                labels: labels,
+                labels,
                 datasets: [
-                    {
-                        label: 'Revenue',
-                        data: revData.length ? revData : [0],
-                        borderColor: '#00CFFF',
-                        backgroundColor: 'rgba(0,207,255,0.08)',
-                        borderWidth: 2.5,
-                        tension: 0,
-                        fill: true,
-                        pointRadius: (ctx) => ctx.dataIndex === revData.length - 1 ? 6 : 3,
-                        pointBackgroundColor: '#00CFFF',
-                        pointBorderColor: '#05080f',
-                        pointBorderWidth: 2,
-                        order: 1
-                    },
-                    {
-                        label: 'Monthly Target',
-                        data: Array(labels.length).fill(monthlyTarget),
-                        borderColor: 'rgba(255,209,58,0.5)',
-                        borderWidth: 1.5,
-                        borderDash: [6,4],
-                        pointRadius: 0,
-                        fill: false,
-                        tension: 0,
-                        order: 2
-                    }
+                    { label: 'Revenue', data: revData.length ? revData : [0],
+                      borderColor: '#00CFFF', backgroundColor: 'rgba(0,207,255,0.08)',
+                      borderWidth: 2.5, tension: 0, fill: true,
+                      pointRadius: (ctx) => ctx.dataIndex === revData.length - 1 ? 6 : 3,
+                      pointBackgroundColor: '#00CFFF', pointBorderColor: '#05080f', pointBorderWidth: 2, order: 1 },
+                    { label: 'Monthly Budget', data: Array(labels.length).fill(monthlyBudget),
+                      borderColor: 'rgba(255,209,58,0.5)', borderWidth: 1.5, borderDash: [6,4],
+                      pointRadius: 0, fill: false, tension: 0, order: 2 }
                 ]
             },
             options: {
                 responsive: true, maintainAspectRatio: false,
-                plugins: {
-                    legend: { display: false },
-                    dashedTarget: { value: null }
-                },
+                plugins: { legend: { display: false }, dashedTarget: { value: null } },
                 scales: {
-                    y: {
-                        display: true,
-                        grid: { color: 'rgba(255,255,255,0.05)', drawBorder: false },
-                        ticks: { color: '#8896B0', font: { size: 10 }, callback: v => '$' + (v/1000000).toFixed(1)+'M', maxTicksLimit: 4 }
-                    },
+                    y: { display: true, grid: { color: 'rgba(255,255,255,0.05)', drawBorder: false },
+                         ticks: { color: '#8896B0', font: { size: 10 }, callback: v => '$' + (v/1000000).toFixed(1)+'M', maxTicksLimit: 4 } },
                     x: { display: true, grid: { display: false }, ticks: { color: '#8896B0', font: { size: 10 } } }
                 }
             }
         });
 
-        // Margin chart
         if (marginChart) marginChart.destroy();
         marginChart = new Chart(document.getElementById('marginChart'), {
             type: 'line',
             data: {
-                labels: labels,
+                labels,
                 datasets: [
-                    {
-                        label: 'Margin %',
-                        data: mgnData.length ? mgnData : [0],
-                        borderColor: '#FFD13A',
-                        backgroundColor: 'rgba(255,209,58,0.08)',
-                        borderWidth: 2.5,
-                        tension: 0,
-                        fill: true,
-                        pointRadius: (ctx) => ctx.dataIndex === mgnData.length - 1 ? 6 : 3,
-                        pointBackgroundColor: '#FFD13A',
-                        pointBorderColor: '#05080f',
-                        pointBorderWidth: 2,
-                        order: 1
-                    },
-                    {
-                        label: 'Target',
-                        data: Array(labels.length).fill(MGN_TARGET),
-                        borderColor: 'rgba(255,209,58,0.4)',
-                        borderWidth: 1.5,
-                        borderDash: [6,4],
-                        pointRadius: 0,
-                        fill: false,
-                        tension: 0,
-                        order: 2
-                    }
+                    { label: 'Margin %', data: mgnData.length ? mgnData : [0],
+                      borderColor: '#FFD13A', backgroundColor: 'rgba(255,209,58,0.08)',
+                      borderWidth: 2.5, tension: 0, fill: true,
+                      pointRadius: (ctx) => ctx.dataIndex === mgnData.length - 1 ? 6 : 3,
+                      pointBackgroundColor: '#FFD13A', pointBorderColor: '#05080f', pointBorderWidth: 2, order: 1 },
+                    { label: 'Floor Target', data: Array(labels.length).fill(marginFloor),
+                      borderColor: 'rgba(255,209,58,0.4)', borderWidth: 1.5, borderDash: [6,4],
+                      pointRadius: 0, fill: false, tension: 0, order: 2 }
                 ]
             },
             options: {
                 responsive: true, maintainAspectRatio: false,
-                plugins: {
-                    legend: { display: false },
-                    dashedTarget: { value: MGN_TARGET, color: 'rgba(255,209,58,0.5)' }
-                },
+                plugins: { legend: { display: false }, dashedTarget: { value: marginFloor, color: 'rgba(255,209,58,0.5)' } },
                 scales: {
-                    y: {
-                        display: true,
-                        grid: { color: 'rgba(255,255,255,0.05)', drawBorder: false },
-                        ticks: { color: '#8896B0', font: { size: 10 }, callback: v => v.toFixed(0)+'%', maxTicksLimit: 4 }
-                    },
+                    y: { display: true, grid: { color: 'rgba(255,255,255,0.05)', drawBorder: false },
+                         ticks: { color: '#8896B0', font: { size: 10 }, callback: v => v.toFixed(0)+'%', maxTicksLimit: 4 } },
                     x: { display: true, grid: { display: false }, ticks: { color: '#8896B0', font: { size: 10 } } }
                 }
             }
         });
 
-        // Goals stacked bar
         if (goalsChart) goalsChart.destroy();
         const statusKeys = ['Completed','On Track','At Risk','Off Track','Not Started','AI Risk'];
-        const datasets = statusKeys.map(k => ({
-            label: k,
-            data: [stats[k] || 0],
-            backgroundColor: STATUS_COLORS[k],
-            borderRadius: 3
-        }));
         goalsChart = new Chart(document.getElementById('goalsChart'), {
             type: 'bar',
-            data: { labels: [''], datasets },
+            data: { labels: [''], datasets: statusKeys.map(k => ({
+                label: k, data: [stats[k] || 0],
+                backgroundColor: STATUS_COLORS[k], borderRadius: 3
+            })) },
             options: {
-                indexAxis: 'y',
-                responsive: true, maintainAspectRatio: false,
+                indexAxis: 'y', responsive: true, maintainAspectRatio: false,
                 plugins: { legend: { display: false } },
                 scales: {
-                    x: { stacked: true, max: GOALS_TOTAL, display: true, grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#8896B0', font: { size: 10 }, stepSize: 5 } },
+                    x: { stacked: true, max: GOALS_TOTAL, display: true,
+                         grid: { color: 'rgba(255,255,255,0.05)' },
+                         ticks: { color: '#8896B0', font: { size: 10 }, stepSize: 5 } },
                     y: { stacked: true, display: false }
                 },
                 layout: { padding: { top: 4 } }
             }
         });
 
-        // Legend
-        const legendEl = document.getElementById('goals-legend');
-        legendEl.innerHTML = statusKeys.filter(k => (stats[k]||0) > 0).map(k =>
-            `<div class="stack-label"><div class="stack-dot" style="background:${STATUS_COLORS[k]}"></div>${k}: ${stats[k]||0}</div>`
-        ).join('');
+        document.getElementById('goals-legend').innerHTML = statusKeys
+            .filter(k => (stats[k]||0) > 0)
+            .map(k => `<div class="stack-label"><div class="stack-dot" style="background:${STATUS_COLORS[k]}"></div>${k}: ${stats[k]||0}</div>`)
+            .join('');
     }
 
-    // ââ Fetch âââââââââââââââââââââââââââââââââââââââââ
+    // ── Fetch ─────────────────────────────────────────────────────────────────
     async function fetchData() {
         try {
             const [fin, gls] = await Promise.all([

@@ -292,23 +292,26 @@
     const DEPARTMENTS = ['AV','Design','Expo','Finance','People, Culture & Performance','Permanent','Production','Systems','Warehouse'];
     const DEPT_SHORT  = { 'People, Culture & Performance': 'People & Culture' };
 
+    const MGN_FLOOR       = 31.7; // FALLBACK — overridden by sheet parse
+    const MGN_STRETCH     = 33.7; // FALLBACK — overridden by sheet parse
+    const GOALS_THRESHOLD = 14;   // FALLBACK — overridden by sheet parse
+
     const STATUS_META = {
-        'Completed':   { cls: 's-completed',  icon: 'â', color: '#00E887' },
-        'On Track':    { cls: 's-ontrack',    icon: 'â', color: '#00CFFF' },
-        'At Risk':     { cls: 's-atrisk',     icon: 'â ', color: '#FFD13A' },
-        'Off Track':   { cls: 's-offtrack',   icon: 'â', color: '#FF4455' },
-        'AI Risk':     { cls: 's-airisk',     icon: '!', color: '#9A7AB3' },
-        'Not Started': { cls: 's-notstarted', icon: 'â', color: '#334155' }
+        'Completed':   { cls: 's-completed',  icon: '\u2713', color: '#00E887' },
+        'On Track':    { cls: 's-ontrack',    icon: '\u2713', color: '#00CFFF' },
+        'At Risk':     { cls: 's-atrisk',     icon: '\u26A0', color: '#FFD13A' },
+        'Off Track':   { cls: 's-offtrack',   icon: '\u2717', color: '#FF4455' },
+        'AI Risk':     { cls: 's-airisk',     icon: '!',       color: '#9A7AB3' },
+        'Not Started': { cls: 's-notstarted', icon: '\u25CB', color: '#334155' }
     };
 
-    // Which status to use for the dept accent bar colour
     function deptAccentColor(goals) {
         if (!goals.length) return '#334155';
-        const comp = goals.filter(g => g.status.includes('Completed')).length;
+        const comp = goals.filter(g => g.status === 'Completed').length;
         if (comp === 3) return '#00E887';
-        if (goals.some(g => g.status.includes('Off Track'))) return '#FF4455';
-        if (goals.some(g => g.status.includes('At Risk')))   return '#FFD13A';
-        if (goals.some(g => g.status.includes('On Track')))  return '#00CFFF';
+        if (goals.some(g => g.status === 'Off Track')) return '#FF4455';
+        if (goals.some(g => g.status === 'At Risk'))   return '#FFD13A';
+        if (goals.some(g => g.status === 'On Track'))  return '#00CFFF';
         return '#334155';
     }
 
@@ -325,75 +328,124 @@
     let currentIdx = 0;
     let carouselTimer = null;
     let deptDistChart = null;
-    let allGoals = {}; // dept â [{title, status, number}]
+    let allGoals = {}; // dept → [{title, status, currentStatus, reviewDate, note, number}]
 
+    // ── Data ─────────────────────────────────────────────────────────────────
     function parseCSVLine(line) {
-        const res = []; let cur = ''; let inQ = false;
+        const result = []; let current = ''; let inQuotes = false;
         for (let i = 0; i < line.length; i++) {
             const c = line[i];
-            if (c === '"') { if (inQ && line[i+1] === '"') { cur += '"'; i++; } else inQ = !inQ; }
-            else if (c === ',' && !inQ) { res.push(cur.trim()); cur = ''; }
-            else cur += c;
+            if (c === '"') { if (inQuotes && line[i+1] === '"') { current += '"'; i++; } else { inQuotes = !inQuotes; } }
+            else if (c === ',' && !inQuotes) { result.push(current.trim()); current = ''; }
+            else { current += c; }
         }
-        res.push(cur.trim());
-        return res;
+        result.push(current.trim());
+        return result;
+    }
+    function parseNum(v) { return parseFloat(String(v).replace(/[$,%"]/g,'').trim()) || 0; }
+
+    // ── Bonus formula ────────────────────────────────────────────────────────
+    function computeBonus({ ytdActualIncome, incomeTarget, ytdMargin, marginFloor, marginStretch, goalsCompleted, goalsThreshold }) {
+        const incomeBonus   = ytdActualIncome >= incomeTarget ? 1.0 : 0.0;
+        const incomeSecured = incomeBonus === 1.0;
+        let marginBonus;
+        if (ytdMargin >= marginStretch)    marginBonus = 2.0;
+        else if (ytdMargin >= marginFloor) marginBonus = 1.0 + ((ytdMargin - marginFloor) / (marginStretch - marginFloor));
+        else                               marginBonus = 0.0;
+        const marginSecured = false; // margin is never "secured" before EOFY
+        const goalsBonus    = goalsCompleted >= goalsThreshold ? 2.0 : 0.0;
+        const goalsSecured  = goalsBonus === 2.0;
+        return {
+            income: { earned: incomeBonus,  max: 1.0, secured: incomeSecured },
+            margin: { earned: marginBonus,  max: 2.0, secured: marginSecured },
+            goals:  { earned: goalsBonus,   max: 2.0, secured: goalsSecured },
+            total:  { earned: incomeBonus + marginBonus + goalsBonus, max: 5.0 },
+        };
     }
 
     function processGoals(csv) {
         const lines = csv.split('\n');
+        let headerCols = [];
         allGoals = {};
         DEPARTMENTS.forEach(d => allGoals[d] = []);
+        const allGoalsList = []; // flat list for window.gd
 
         lines.forEach((line, idx) => {
-            if (idx > 0 && line.trim()) {
-                const cols = parseCSVLine(line);
-                const dept = (cols[0] || '').trim();
-                if (!DEPARTMENTS.includes(dept)) return;
-                if (allGoals[dept].length >= 3) return; // max 3 per dept
-                const title  = (cols[1] || 'Untitled goal').trim();
-                const status = getStatusKey((cols[5] || '').trim());
-                allGoals[dept].push({ title, status, number: allGoals[dept].length + 1 });
+            if (idx === 0) { headerCols = parseCSVLine(line); return; }
+            if (!line.trim()) return;
+            const cols = parseCSVLine(line);
+            const dept = (cols[0] || '').trim();
+            if (!DEPARTMENTS.includes(dept)) return;
+            if (allGoals[dept].length >= 3) return;
+
+            const title = (cols[1] || 'Untitled goal').trim();
+
+            // Scan cols[2]..cols[8] right-to-left for the latest non-empty review status
+            let rawStatus = '', reviewDate = '';
+            for (let ci = 8; ci >= 2; ci--) {
+                const v = (cols[ci] || '').trim();
+                if (v) { rawStatus = v; reviewDate = (headerCols[ci] || '').trim(); break; }
             }
+            const statusKey = getStatusKey(rawStatus);
+            // col[9] is "Notes from last meeting" — exposed on goal object, rendered in a later PR
+            const note = (cols[9] || '').trim();
+
+            const goalObj = {
+                title,
+                status:        statusKey,   // canonical key used for rendering
+                currentStatus: rawStatus,   // raw value from sheet
+                reviewDate,
+                note,
+                number: allGoals[dept].length + 1
+            };
+            allGoals[dept].push(goalObj);
+            allGoalsList.push({ dept, ...goalObj });
         });
+
+        // Bonus formula on window for dev console inspection — not surfaced in UI
+        const totalCompleted = allGoalsList.filter(g => g.status === 'Completed').length;
+        window.bonus = computeBonus({
+            ytdActualIncome: 0,
+            incomeTarget:    10342000,
+            ytdMargin:       0,
+            marginFloor:     MGN_FLOOR,
+            marginStretch:   MGN_STRETCH,
+            goalsCompleted:  totalCompleted,
+            goalsThreshold:  GOALS_THRESHOLD,
+        });
+        window.gd = { goals: allGoalsList };
     }
 
+    // ── Render ────────────────────────────────────────────────────────────────
     function renderDept(idx) {
         const dept  = DEPARTMENTS[idx];
         const goals = allGoals[dept] || [];
         const name  = DEPT_SHORT[dept] || dept;
         const comp  = goals.filter(g => g.status === 'Completed').length;
 
-        // Header
         set('dept-name', name);
         set('dept-score', comp + ' / ' + (goals.length || 3));
         set('dept-sub', 'goals completed');
 
-        const scoreColor = comp === 3 ? 'var(--green)' : comp >= 1 ? 'var(--blue)' : 'var(--dim)';
         const scoreEl = document.getElementById('dept-score');
-        if (scoreEl) scoreEl.style.color = scoreColor;
+        if (scoreEl) scoreEl.style.color = comp === 3 ? 'var(--green)' : comp >= 1 ? 'var(--blue)' : 'var(--dim)';
 
-        // Accent bar
         document.getElementById('dept-banner').style.background = deptAccentColor(goals);
 
-        // Cards
         const hasData = goals.length > 0;
         document.getElementById('cards-row').innerHTML = hasData
             ? goals.map(g => renderCard(g)).join('')
             : renderPlaceholderCards();
 
-        // Status distribution bar for this dept
         renderDeptDist(goals);
-
-        // Nav
         renderNav(idx);
 
-        // Timestamp
         const now = new Date();
         set('updated', 'Updated ' + now.toLocaleString('en-AU',{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit',hour12:true}));
     }
 
     function renderCard(goal) {
-        const sm   = STATUS_META[goal.status] || STATUS_META['Not Started'];
+        const sm = STATUS_META[goal.status] || STATUS_META['Not Started'];
         return `<div class="goal-card ${sm.cls}">
             <div class="goal-number">Goal ${goal.number}</div>
             <div class="goal-title">${goal.title}</div>
@@ -408,23 +460,18 @@
     function renderPlaceholderCards() {
         return Array(3).fill(0).map((_, i) => `
             <div class="goal-card placeholder-card s-notstarted">
-                <div class="ph-icon">â</div>
-                <div class="ph-text">Goal ${i+1} â loadingâ¦</div>
+                <div class="ph-icon">\u25CB</div>
+                <div class="ph-text">Goal ${i+1} \u2014 loading\u2026</div>
             </div>`).join('');
     }
 
     function renderDeptDist(goals) {
         if (deptDistChart) deptDistChart.destroy();
-
         const statusOrder = ['Completed','On Track','At Risk','Off Track','AI Risk','Not Started'];
         const counts = {};
         statusOrder.forEach(k => counts[k] = 0);
         goals.forEach(g => counts[g.status] = (counts[g.status] || 0) + 1);
-
-        // Fill remaining slots as Not Started if < 3 goals returned
-        const totalSlots = 3;
-        const shown = goals.length;
-        if (shown < totalSlots) counts['Not Started'] += (totalSlots - shown);
+        if (goals.length < 3) counts['Not Started'] += (3 - goals.length);
 
         const activeKeys = statusOrder.filter(k => counts[k] > 0);
 
@@ -433,15 +480,12 @@
             data: {
                 labels: [''],
                 datasets: statusOrder.map(k => ({
-                    label: k,
-                    data: [counts[k] || 0],
-                    backgroundColor: STATUS_META[k]?.color || '#334155',
-                    borderRadius: 3
+                    label: k, data: [counts[k] || 0],
+                    backgroundColor: STATUS_META[k]?.color || '#334155', borderRadius: 3
                 }))
             },
             options: {
-                indexAxis: 'y',
-                responsive: true, maintainAspectRatio: false,
+                indexAxis: 'y', responsive: true, maintainAspectRatio: false,
                 plugins: { legend: { display: false } },
                 scales: {
                     x: { stacked: true, max: 3, display: false },
@@ -450,7 +494,6 @@
             }
         });
 
-        // Legend
         document.getElementById('sb-legend').innerHTML = activeKeys.map(k => `
             <div class="sb-item">
                 <div class="sb-dot" style="background:${STATUS_META[k]?.color}"></div>
@@ -461,8 +504,7 @@
     function renderNav(activeIdx) {
         document.getElementById('nav-row').innerHTML = DEPARTMENTS.map((dept, i) => {
             const name = DEPT_SHORT[dept] || dept;
-            const isActive = i === activeIdx;
-            return `<div class="nav-dot ${isActive ? 'active' : ''}" onclick="goTo(${i})" title="${name}"></div>`;
+            return `<div class="nav-dot ${i === activeIdx ? 'active' : ''}" onclick="goTo(${i})" title="${name}"></div>`;
         }).join('');
     }
 

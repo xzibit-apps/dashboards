@@ -309,8 +309,8 @@
         goalsSheetUrl: 'https://docs.google.com/spreadsheets/d/1VumQnhFi2siIvaWHPZ1LuMdFiqI6ifjS_sHJIAKRi4c/export?format=csv&gid=368453036'
     };
 
-    const DEPT_NAMES = ['AV','Design','Expo','Finance','People, Culture & Performance','Permanent','Production','Systems','Warehouse'];
-    const DEPT_SHORT = { 'People, Culture & Performance': 'People & Culture' };
+    const DEPT_NAMES  = ['AV','Design','Expo','Finance','People, Culture & Performance','Permanent','Production','Systems','Warehouse'];
+    const DEPT_SHORT  = { 'People, Culture & Performance': 'People & Culture' };
     const STATUS_COLORS = {
         'Completed':   '#00E887',
         'On Track':    '#00CFFF',
@@ -320,49 +320,89 @@
         'AI Risk':     '#9A7AB3'
     };
     const STATUS_ORDER = ['Completed','On Track','At Risk','Off Track','AI Risk','Not Started'];
-    const TOTAL = 27;
-    const BONUS_THRESHOLD = 14;
+
+    const TOTAL           = 27; // FALLBACK — overridden by sheet parse
+    const BONUS_THRESHOLD = 14; // FALLBACK — overridden by sheet parse
+    const MGN_FLOOR       = 31.7; // FALLBACK — overridden by sheet parse
+    const MGN_STRETCH     = 33.7; // FALLBACK — overridden by sheet parse
 
     let distChart;
 
+    // ── Data ─────────────────────────────────────────────────────────────────
     function parseCSVLine(line) {
-        const res = []; let cur = ''; let inQ = false;
+        const result = []; let current = ''; let inQuotes = false;
         for (let i = 0; i < line.length; i++) {
             const c = line[i];
-            if (c === '"') { if (inQ && line[i+1] === '"') { cur += '"'; i++; } else inQ = !inQ; }
-            else if (c === ',' && !inQ) { res.push(cur.trim()); cur = ''; }
-            else cur += c;
+            if (c === '"') { if (inQuotes && line[i+1] === '"') { current += '"'; i++; } else { inQuotes = !inQuotes; } }
+            else if (c === ',' && !inQuotes) { result.push(current.trim()); current = ''; }
+            else { current += c; }
         }
-        res.push(cur.trim());
-        return res;
+        result.push(current.trim());
+        return result;
+    }
+    function parseNum(v) { return parseFloat(String(v).replace(/[$,%"]/g,'').trim()) || 0; }
+
+    // ── Bonus formula ────────────────────────────────────────────────────────
+    function computeBonus({ ytdActualIncome, incomeTarget, ytdMargin, marginFloor, marginStretch, goalsCompleted, goalsThreshold }) {
+        const incomeBonus   = ytdActualIncome >= incomeTarget ? 1.0 : 0.0;
+        const incomeSecured = incomeBonus === 1.0;
+        let marginBonus;
+        if (ytdMargin >= marginStretch)    marginBonus = 2.0;
+        else if (ytdMargin >= marginFloor) marginBonus = 1.0 + ((ytdMargin - marginFloor) / (marginStretch - marginFloor));
+        else                               marginBonus = 0.0;
+        const marginSecured = false; // margin is never "secured" before EOFY
+        const goalsBonus    = goalsCompleted >= goalsThreshold ? 2.0 : 0.0;
+        const goalsSecured  = goalsBonus === 2.0;
+        return {
+            income: { earned: incomeBonus,  max: 1.0, secured: incomeSecured },
+            margin: { earned: marginBonus,  max: 2.0, secured: marginSecured },
+            goals:  { earned: goalsBonus,   max: 2.0, secured: goalsSecured },
+            total:  { earned: incomeBonus + marginBonus + goalsBonus, max: 5.0 },
+        };
     }
 
     function processGoals(csv) {
         const lines = csv.split('\n');
+        let headerCols = [];
         const statuses = {};
         STATUS_ORDER.forEach(k => statuses[k] = 0);
         const depts = {};
         DEPT_NAMES.forEach(d => depts[d] = { completed: 0, total: 3 });
+        const goals = [];
 
         lines.forEach((line, idx) => {
-            if (idx > 0 && line.trim()) {
-                const cols = parseCSVLine(line);
-                const dept = (cols[0] || '').trim();
-                if (!DEPT_NAMES.includes(dept)) return;
-                const status = (cols[5] || '').trim() || 'Not Started';
+            if (idx === 0) { headerCols = parseCSVLine(line); return; }
+            if (!line.trim()) return;
+            const cols = parseCSVLine(line);
+            const dept = (cols[0] || '').trim();
+            if (!DEPT_NAMES.includes(dept)) return;
 
-                if (status.includes('Completed'))       { statuses['Completed']++;  depts[dept].completed++; }
-                else if (status.includes('On Track'))   statuses['On Track']++;
-                else if (status.includes('Off Track'))  statuses['Off Track']++;
-                else if (status.includes('At Risk'))    statuses['At Risk']++;
-                else if (status.includes('AI Risk'))    statuses['AI Risk']++;
-                else                                    statuses['Not Started']++;
+            // Scan cols[2]..cols[8] right-to-left for the latest non-empty review status
+            let rawStatus = '', reviewDate = '';
+            for (let ci = 8; ci >= 2; ci--) {
+                const v = (cols[ci] || '').trim();
+                if (v) { rawStatus = v; reviewDate = (headerCols[ci] || '').trim(); break; }
             }
+            if (!rawStatus) rawStatus = 'Not Started';
+
+            const title = (cols[1] || '').trim();
+            const note  = (cols[9] || '').trim();
+
+            if (rawStatus.includes('Completed'))       { statuses['Completed']++;  depts[dept].completed++; }
+            else if (rawStatus.includes('On Track'))     statuses['On Track']++;
+            else if (rawStatus.includes('Off Track'))    statuses['Off Track']++;
+            else if (rawStatus.includes('At Risk'))      statuses['At Risk']++;
+            else if (rawStatus.includes('AI Risk'))      statuses['AI Risk']++;
+            else                                          statuses['Not Started']++;
+
+            goals.push({ dept, title, currentStatus: rawStatus, reviewDate, note });
         });
 
         window.summaryData = { statuses, depts };
+        window.gd = { goals };
     }
 
+    // ── Render ────────────────────────────────────────────────────────────────
     function render() {
         if (!window.summaryData) return;
         const { statuses, depts } = window.summaryData;
@@ -373,7 +413,6 @@
         const pct      = Math.round((comp / TOTAL) * 100);
         const need     = Math.max(0, BONUS_THRESHOLD - comp);
 
-        // KPI cards
         set('k-complete',      comp);
         set('k-complete-note', comp === 1 ? 'goal done' : 'goals done');
         set('k-ontrack',       ontrack);
@@ -381,63 +420,65 @@
         set('k-offtrack',      offtrack);
         set('k-pct',           pct + '%');
 
-        // Progress bar â fill proportional to 27
         const fillPct = Math.round((comp / TOTAL) * 100);
         document.getElementById('main-fill').style.width = fillPct + '%';
         set('fill-label', fillPct >= 10 ? comp + ' of ' + TOTAL : '');
         set('progress-caption', comp + ' of ' + TOTAL + ' goals completed');
-        set('progress-note', pct + '% complete â target is 50% (14 goals) to unlock bonus');
+        set('progress-note', pct + '% complete \u2014 target is 50% (14 goals) to unlock bonus');
 
-        // Threshold banner
         const threshEl = document.getElementById('threshold-row');
         if (comp >= BONUS_THRESHOLD) {
             threshEl.style.borderColor = 'rgba(0,232,135,0.3)';
             threshEl.style.background  = 'rgba(0,232,135,0.06)';
-            set('threshold-text', 'â Bonus threshold reached â 14 or more goals complete');
+            set('threshold-text', '\u2713 Bonus threshold reached \u2014 14 or more goals complete');
         } else {
             threshEl.style.borderColor = 'rgba(255,209,58,0.2)';
             threshEl.style.background  = 'rgba(255,209,58,0.06)';
             set('threshold-text', need + ' more goal' + (need !== 1 ? 's' : '') + ' needed to unlock the bonus (target: 14 of 27 complete)');
         }
 
-        // Distribution chart
         renderDist(statuses);
-
-        // Dept leaderboard
         renderDepts(depts);
 
-        // Timestamp
+        // Bonus formula on window for dev console inspection — not surfaced in UI
+        window.bonus = computeBonus({
+            ytdActualIncome: 0,
+            incomeTarget:    10342000,
+            ytdMargin:       0,
+            marginFloor:     MGN_FLOOR,
+            marginStretch:   MGN_STRETCH,
+            goalsCompleted:  comp,
+            goalsThreshold:  BONUS_THRESHOLD,
+        });
+
         const now = new Date();
         set('updated', 'Updated ' + now.toLocaleString('en-AU',{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit',hour12:true}));
     }
 
     function renderDist(statuses) {
-        const activeKeys = STATUS_ORDER.filter(k => (statuses[k] || 0) > 0);
         if (distChart) distChart.destroy();
         distChart = new Chart(document.getElementById('distChart'), {
             type: 'bar',
             data: {
                 labels: [''],
                 datasets: STATUS_ORDER.map(k => ({
-                    label: k,
-                    data: [statuses[k] || 0],
-                    backgroundColor: STATUS_COLORS[k],
-                    borderRadius: 3
+                    label: k, data: [statuses[k] || 0],
+                    backgroundColor: STATUS_COLORS[k], borderRadius: 3
                 }))
             },
             options: {
-                indexAxis: 'y',
-                responsive: true, maintainAspectRatio: false,
+                indexAxis: 'y', responsive: true, maintainAspectRatio: false,
                 plugins: { legend: { display: false } },
                 scales: {
-                    x: { stacked: true, max: TOTAL, display: true, grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#8896B0', font: { size: 11 }, stepSize: 3 } },
+                    x: { stacked: true, max: TOTAL, display: true,
+                         grid: { color: 'rgba(255,255,255,0.05)' },
+                         ticks: { color: '#8896B0', font: { size: 11 }, stepSize: 3 } },
                     y: { stacked: true, display: false }
                 },
                 layout: { padding: { top: 2 } }
             }
         });
 
-        // Legend
         document.getElementById('dist-legend').innerHTML = STATUS_ORDER.map(k => {
             const n = statuses[k] || 0;
             return `<div class="legend-item">
@@ -449,41 +490,24 @@
     }
 
     function renderDepts(depts) {
-        // Sort: completed desc, then name
         const sorted = DEPT_NAMES.slice().sort((a, b) => {
             const ca = depts[a]?.completed || 0;
             const cb = depts[b]?.completed || 0;
             return cb - ca || a.localeCompare(b);
         });
 
-        const listEl = document.getElementById('dept-list');
-        listEl.innerHTML = sorted.map((dept, i) => {
+        document.getElementById('dept-list').innerHTML = sorted.map((dept, i) => {
             const d = depts[dept] || { completed: 0, total: 3 };
             const fillPct = Math.round((d.completed / d.total) * 100);
-            const name = DEPT_SHORT[dept] || dept;
-            const medal = i === 0 && d.completed > 0 ? 'ð¥ ' : '';
-
-            // Color by completion
-            const scoreColor = d.completed === 3 ? 'var(--green)'
-                             : d.completed === 2 ? 'var(--blue)'
-                             : d.completed === 1 ? 'var(--gold)'
-                             : 'var(--dim)';
-            const borderColor = d.completed === 3 ? 'var(--green)'
-                              : d.completed >= 1 ? 'var(--blue)'
-                              : 'var(--border)';
-            const fillColor = d.completed === 3 ? '#00E887'
-                            : d.completed === 2 ? '#00CFFF'
-                            : d.completed === 1 ? '#FFD13A'
-                            : '#334155';
-
+            const name  = DEPT_SHORT[dept] || dept;
+            const medal = i === 0 && d.completed > 0 ? '\uD83E\uDD47 ' : '';
+            const scoreColor  = d.completed === 3 ? 'var(--green)' : d.completed === 2 ? 'var(--blue)' : d.completed === 1 ? 'var(--gold)' : 'var(--dim)';
+            const borderColor = d.completed === 3 ? 'var(--green)' : d.completed >= 1  ? 'var(--blue)' : 'var(--border)';
+            const fillColor   = d.completed === 3 ? '#00E887' : d.completed === 2 ? '#00CFFF' : d.completed === 1 ? '#FFD13A' : '#334155';
             return `<div class="dept-row" style="border-left-color:${borderColor}">
                 <div class="dept-rank">${i + 1}</div>
                 <div class="dept-name">${medal}${name}</div>
-                <div class="dept-bar-wrap">
-                    <div class="dept-track">
-                        <div class="dept-fill" style="width:${fillPct}%;background:${fillColor}"></div>
-                    </div>
-                </div>
+                <div class="dept-bar-wrap"><div class="dept-track"><div class="dept-fill" style="width:${fillPct}%;background:${fillColor}"></div></div></div>
                 <div class="dept-score" style="color:${scoreColor}">${d.completed}/${d.total}</div>
             </div>`;
         }).join('');
