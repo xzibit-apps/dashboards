@@ -147,7 +147,6 @@
             color: var(--dim);
             line-height: 1.5;
             margin-bottom: 24px;
-            min-height: 42px;
         }
         .goal-status-badge {
             display: inline-flex;
@@ -224,24 +223,20 @@
             gap: 10px;
             padding: 10px 0 14px;
         }
-        .nav-dot {
-            width: 10px; height: 10px;
-            border-radius: 50%;
-            background: var(--border);
+        .nav-pill {
+            font-family: 'Barlow Condensed', sans-serif;
+            font-size: 14px; font-weight: 700;
+            letter-spacing: 2px; text-transform: uppercase;
+            padding: 6px 18px;
+            border-radius: 20px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            color: var(--dim);
             cursor: pointer;
             transition: all 0.3s;
+            white-space: nowrap;
         }
-        .nav-dot.active {
-            background: var(--blue);
-            width: 28px;
-            border-radius: 5px;
-        }
-        .nav-dept-label {
-            font-family: 'Barlow Condensed', sans-serif;
-            font-size: 12px; font-weight: 700;
-            letter-spacing: 2px; text-transform: uppercase;
-            color: var(--dim); margin: 0 8px;
-        }
+        .nav-pill.active { color: #000; font-weight: 900; }
 
         /* Fade transition */
         .fade-out { opacity: 0; transition: opacity 0.25s; }
@@ -266,7 +261,7 @@
                 <div class="ticker-value" id="dept-score" style="color:var(--green)">—</div>
                 <div>
                     <div class="ticker-label">Goals Completed</div>
-                    <div style="font-size:11px;color:var(--dim);" id="dept-sub">of 3</div>
+                    <div class="ticker-label" id="dept-rank" style="margin-top:3px;">—</div>
                 </div>
             </div>
         </div>
@@ -305,7 +300,17 @@
     };
 
     const DEPARTMENTS = ['AV','Design','Expo','Finance','People, Culture & Performance','Permanent','Production','Systems','Warehouse'];
-    const DEPT_SHORT  = { 'People, Culture & Performance': 'People & Culture' };
+    const DEPT_SHORT = {
+        'AV':                            'AV',
+        'Design':                        'Design',
+        'Expo':                          'Expo',
+        'Finance':                       'Finance',
+        'People, Culture & Performance': 'P&C',
+        'Permanent':                     'Perm',
+        'Production':                    'Prod',
+        'Systems':                       'Sys',
+        'Warehouse':                     'WH'
+    };
 
     const MGN_FLOOR       = 31.7; // FALLBACK — overridden by sheet parse
     const MGN_STRETCH     = 33.7; // FALLBACK — overridden by sheet parse
@@ -319,6 +324,23 @@
         'AI Risk':     { cls: 's-airisk',     icon: '!',       color: '#9A7AB3' },
         'Not Started': { cls: 's-notstarted', icon: '\u25CB', color: '#334155' }
     };
+
+    function ordinal(n) {
+        const s = ['th','st','nd','rd'];
+        const v = n % 100;
+        return n + (s[(v - 20) % 10] || s[v] || s[0]);
+    }
+
+    function computeRanks() {
+        const sorted = DEPARTMENTS.slice().sort((a, b) => {
+            const ca = (allGoals[a] || []).filter(g => g.status === 'Completed').length;
+            const cb = (allGoals[b] || []).filter(g => g.status === 'Completed').length;
+            return cb !== ca ? cb - ca : a.localeCompare(b);
+        });
+        const ranks = {};
+        sorted.forEach((dept, i) => { ranks[dept] = i + 1; });
+        return ranks;
+    }
 
     function deptAccentColor(goals) {
         if (!goals.length) return '#334155';
@@ -438,9 +460,11 @@
         const name  = DEPT_SHORT[dept] || dept;
         const comp  = goals.filter(g => g.status === 'Completed').length;
 
+        const rank = computeRanks()[dept] || '?';
+
         set('dept-name', name);
         set('dept-score', comp + ' / ' + (goals.length || 3));
-        set('dept-sub', 'goals completed');
+        set('dept-rank', 'RANKED ' + ordinal(rank) + ' OF ' + DEPARTMENTS.length);
 
         const scoreEl = document.getElementById('dept-score');
         if (scoreEl) scoreEl.style.color = comp === 3 ? 'var(--green)' : comp >= 1 ? 'var(--blue)' : 'var(--dim)';
@@ -460,10 +484,13 @@
 
     function renderCard(goal) {
         const sm = STATUS_META[goal.status] || STATUS_META['Not Started'];
+        const noteHtml = goal.note && goal.note.trim()
+            ? `<div class="goal-note">${goal.note.trim()}</div>`
+            : `<div class="goal-note" style="display:none"></div>`;
         return `<div class="goal-card ${sm.cls}">
             <div class="goal-number">Goal ${goal.number}</div>
             <div class="goal-title">${goal.title}</div>
-            <div class="goal-note"></div>
+            ${noteHtml}
             <div class="goal-status-badge ${sm.cls}">
                 <span class="badge-icon">${sm.icon}</span>
                 <span>${goal.status}</span>
@@ -517,8 +544,11 @@
 
     function renderNav(activeIdx) {
         document.getElementById('nav-row').innerHTML = DEPARTMENTS.map((dept, i) => {
-            const name = DEPT_SHORT[dept] || dept;
-            return `<div class="nav-dot ${i === activeIdx ? 'active' : ''}" onclick="goTo(${i})" title="${name}"></div>`;
+            const label = DEPT_SHORT[dept] || dept;
+            const isActive = i === activeIdx;
+            const accent = isActive ? deptAccentColor(allGoals[dept] || []) : null;
+            const style = isActive ? `background:${accent};border-color:${accent}` : '';
+            return `<div class="nav-pill${isActive ? ' active' : ''}" onclick="goTo(${i})" style="${style}">${label}</div>`;
         }).join('');
     }
 
@@ -529,11 +559,14 @@
     }
 
     function resetCarousel() {
-        if (carouselTimer) clearInterval(carouselTimer);
-        carouselTimer = setInterval(() => {
+        if (carouselTimer) clearTimeout(carouselTimer);
+        const goals = allGoals[DEPARTMENTS[currentIdx]] || [];
+        const dwell = goals.some(g => g.status === 'Off Track') ? 15000 : 10000;
+        carouselTimer = setTimeout(() => {
             currentIdx = (currentIdx + 1) % DEPARTMENTS.length;
             renderDept(currentIdx);
-        }, 10000);
+            resetCarousel();
+        }, dwell);
     }
 
     function set(id, val) { const el = document.getElementById(id); if (el) el.textContent = val; }
