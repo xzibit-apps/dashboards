@@ -31,7 +31,7 @@
         }
         .dashboard { width: 100%; height: 100%; display: flex; flex-direction: column; }
 
-        /* ââ HEADER ââ */
+        /* ── HEADER ── */
         .header {
             display: flex;
             align-items: center;
@@ -103,14 +103,14 @@
         .updated.stale::before  { background: var(--gold);  animation: freshness-pulse 2s ease-in-out infinite; }
         .updated.broken::before { background: var(--red);   animation: freshness-pulse 1.5s ease-in-out infinite; }
 
-        /* ââ DEPT BANNER (dept-specific accent) ââ */
+        /* ── DEPT BANNER (dept-specific accent) ── */
         .dept-banner {
             height: 6px;
             transition: background 0.4s;
             flex-shrink: 0;
         }
 
-        /* ââ 3 GOAL CARDS ââ */
+        /* ── 3 GOAL CARDS ── */
         .cards-row {
             flex: 1;
             display: grid;
@@ -191,7 +191,7 @@
         .placeholder-card .ph-icon { font-size: 36px; opacity: 0.4; }
         .placeholder-card .ph-text { font-size: 14px; }
 
-        /* ââ BOTTOM: STATUS BAR + NAV ââ */
+        /* ── BOTTOM: STATUS BAR + NAV ── */
         .bottom-section {
             flex-shrink: 0;
             background: var(--surface);
@@ -257,13 +257,13 @@
             <div class="logo-x">X</div>
             <div>
                 <div class="header-title">Department Goals</div>
-                <div class="dept-headline" id="dept-name">Loadingâ¦</div>
+                <div class="dept-headline" id="dept-name">Loading…</div>
             </div>
         </div>
 
         <div class="header-center">
             <div class="progress-ticker">
-                <div class="ticker-value" id="dept-score" style="color:var(--green)">â</div>
+                <div class="ticker-value" id="dept-score" style="color:var(--green)">—</div>
                 <div>
                     <div class="ticker-label">Goals Completed</div>
                     <div style="font-size:11px;color:var(--dim);" id="dept-sub">of 3</div>
@@ -272,8 +272,8 @@
         </div>
 
         <div class="header-right">
-            <div class="season">2025â26</div>
-            <div class="updated" id="updated">Updatingâ¦</div>
+            <div class="season">2025–26</div>
+            <div class="updated" id="updated">Updating…</div>
         </div>
     </div>
 

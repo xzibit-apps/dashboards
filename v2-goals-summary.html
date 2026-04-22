@@ -31,7 +31,7 @@
         }
         .dashboard { width: 100%; height: 100%; display: flex; flex-direction: column; }
 
-        /* ââ HEADER ââ */
+        /* ── HEADER ── */
         .header {
             display: flex;
             align-items: center;
@@ -75,7 +75,7 @@
         .updated.stale::before  { background: var(--gold);  animation: freshness-pulse 2s ease-in-out infinite; }
         .updated.broken::before { background: var(--red);   animation: freshness-pulse 1.5s ease-in-out infinite; }
 
-        /* ââ KPI ROW ââ */
+        /* ── KPI ROW ── */
         .kpi-row {
             display: grid;
             grid-template-columns: repeat(6, 1fr);
@@ -103,7 +103,7 @@
         }
         .kpi-note { font-size: 12px; color: var(--dim); margin-top: 4px; }
 
-        /* ââ MAIN BODY ââ */
+        /* ── MAIN BODY ── */
         .body {
             flex: 1;
             display: grid;
@@ -113,7 +113,7 @@
             overflow: hidden;
         }
 
-        /* ââ OVERALL PROGRESS (left, spans full height) ââ */
+        /* ── OVERALL PROGRESS (left, spans full height) ── */
         .section {
             padding: 28px 40px;
             border-right: 1px solid var(--border);
@@ -179,7 +179,7 @@
         .threshold-text { font-size: 14px; }
         .threshold-text strong { color: var(--gold); }
 
-        /* ââ STATUS DISTRIBUTION ââ */
+        /* ── STATUS DISTRIBUTION ── */
         .dist-chart-wrap { flex: 1; position: relative; min-height: 60px; margin-bottom: 14px; }
         .dist-legend {
             display: flex;
@@ -190,7 +190,7 @@
         .legend-dot { width: 14px; height: 14px; border-radius: 3px; flex-shrink: 0; }
         .legend-count { font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 15px; }
 
-        /* ââ DEPARTMENT LEADERBOARD ââ */
+        /* ── DEPARTMENT LEADERBOARD ── */
         .dept-list { flex: 1; display: flex; flex-direction: column; gap: 10px; overflow: hidden; }
         .dept-row {
             display: flex;
@@ -234,12 +234,12 @@
             <div class="logo-x">X</div>
             <div>
                 <div class="header-title">Team Goals Summary</div>
-                <div class="header-sub">All departments Â· 2025â26</div>
+                <div class="header-sub">All departments · 2025–26</div>
             </div>
         </div>
         <div class="header-right">
-            <div class="season">2025â26</div>
-            <div class="updated" id="updated">Updatingâ¦</div>
+            <div class="season">2025–26</div>
+            <div class="updated" id="updated">Updating…</div>
         </div>
     </div>
 
@@ -252,27 +252,27 @@
         </div>
         <div class="kpi">
             <div class="kpi-label">Completed</div>
-            <div class="kpi-value" style="color:var(--green)" id="k-complete">â</div>
+            <div class="kpi-value" style="color:var(--green)" id="k-complete">—</div>
             <div class="kpi-note" id="k-complete-note">goals done</div>
         </div>
         <div class="kpi">
             <div class="kpi-label">On Track</div>
-            <div class="kpi-value" style="color:var(--blue)" id="k-ontrack">â</div>
+            <div class="kpi-value" style="color:var(--blue)" id="k-ontrack">—</div>
             <div class="kpi-note">expected on time</div>
         </div>
         <div class="kpi">
             <div class="kpi-label">At Risk</div>
-            <div class="kpi-value" style="color:var(--gold)" id="k-atrisk">â</div>
+            <div class="kpi-value" style="color:var(--gold)" id="k-atrisk">—</div>
             <div class="kpi-note">need attention</div>
         </div>
         <div class="kpi">
             <div class="kpi-label">Off Track</div>
-            <div class="kpi-value" style="color:var(--red)" id="k-offtrack">â</div>
+            <div class="kpi-value" style="color:var(--red)" id="k-offtrack">—</div>
             <div class="kpi-note">behind or stalled</div>
         </div>
         <div class="kpi">
             <div class="kpi-label">% Complete</div>
-            <div class="kpi-value" style="color:var(--text)" id="k-pct">â</div>
+            <div class="kpi-value" style="color:var(--text)" id="k-pct">—</div>
             <div class="kpi-note">of all 27 goals</div>
         </div>
     </div>
@@ -289,12 +289,12 @@
                         <span class="fill-label" id="fill-label"></span>
                     </div>
                 </div>
-                <div class="big-progress-caption" id="progress-caption">Loadingâ¦</div>
+                <div class="big-progress-caption" id="progress-caption">Loading…</div>
                 <div class="big-progress-note" id="progress-note"></div>
             </div>
             <div class="threshold-row" id="threshold-row">
-                <div class="threshold-icon">ð¯</div>
-                <div class="threshold-text" id="threshold-text">Loading bonus threshold statusâ¦</div>
+                <div class="threshold-icon">🎯</div>
+                <div class="threshold-text" id="threshold-text">Loading bonus threshold status…</div>
             </div>
         </div>
 
@@ -309,9 +309,9 @@
 
         <!-- BY DEPARTMENT -->
         <div class="section no-border-bottom" style="grid-column: 1 / -1; border-right: none;">
-            <div class="section-label">By Department â Leaderboard</div>
+            <div class="section-label">By Department — Leaderboard</div>
             <div class="dept-list" id="dept-list">
-                <div style="color:var(--dim);font-size:14px;">Loading department dataâ¦</div>
+                <div style="color:var(--dim);font-size:14px;">Loading department data…</div>
             </div>
         </div>
 
