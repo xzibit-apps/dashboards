@@ -75,33 +75,61 @@
         .updated.stale::before  { background: var(--gold);  animation: freshness-pulse 2s ease-in-out infinite; }
         .updated.broken::before { background: var(--red);   animation: freshness-pulse 1.5s ease-in-out infinite; }
 
-        /* ── KPI ROW ── */
-        .kpi-row {
-            display: grid;
-            grid-template-columns: repeat(6, 1fr);
-            gap: 0;
+        /* ── HERO + STATS STRIP ── */
+        .hero-strip {
             border-bottom: 2px solid var(--border);
             flex-shrink: 0;
-        }
-        .kpi {
-            padding: 20px 24px;
-            border-right: 1px solid var(--border);
             display: flex;
             flex-direction: column;
+        }
+        .hero-wrap {
+            display: flex;
+            align-items: center;
             justify-content: center;
+            gap: 28px;
+            padding: 16px 48px 12px;
         }
-        .kpi:last-child { border-right: none; }
-        .kpi-label {
+        .hero-number {
             font-family: 'Barlow Condensed', sans-serif;
-            font-size: 12px; font-weight: 700;
-            letter-spacing: 3px; text-transform: uppercase;
-            color: var(--dim); margin-bottom: 8px;
+            font-size: 96px; font-weight: 900; line-height: 1;
+            color: var(--green); flex-shrink: 0;
         }
-        .kpi-value {
+        .hero-text { display: flex; flex-direction: column; justify-content: center; }
+        .hero-label {
             font-family: 'Barlow Condensed', sans-serif;
-            font-size: 56px; font-weight: 900; line-height: 1;
+            font-size: 13px; font-weight: 700;
+            letter-spacing: 4px; text-transform: uppercase;
+            color: var(--dim); margin-bottom: 4px;
         }
-        .kpi-note { font-size: 12px; color: var(--dim); margin-top: 4px; }
+        .hero-headline {
+            font-family: 'Barlow Condensed', sans-serif;
+            font-size: 26px; font-weight: 900;
+            color: var(--green); letter-spacing: 1px;
+        }
+        .hero-sub { font-size: 14px; color: var(--dim); margin-top: 4px; }
+        .stats-strip {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            border-top: 1px solid var(--border);
+        }
+        .stat-cell {
+            padding: 7px 20px;
+            border-right: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .stat-cell:last-child { border-right: none; }
+        .stat-lbl {
+            font-family: 'Barlow Condensed', sans-serif;
+            font-size: 11px; font-weight: 700;
+            letter-spacing: 2px; text-transform: uppercase;
+            color: var(--dim);
+        }
+        .stat-num {
+            font-family: 'Barlow Condensed', sans-serif;
+            font-size: 26px; font-weight: 900; line-height: 1;
+        }
 
         /* ── MAIN BODY ── */
         .body {
@@ -190,8 +218,28 @@
         .legend-dot { width: 14px; height: 14px; border-radius: 3px; flex-shrink: 0; }
         .legend-count { font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 15px; }
 
+        /* ── PROJECTION LINE ── */
+        .proj-line {
+            font-family: 'Barlow Condensed', sans-serif;
+            font-size: 14px; font-weight: 700;
+            letter-spacing: 0.5px;
+            margin-top: 10px;
+            padding: 8px 12px;
+            border-radius: 4px;
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.07);
+        }
+
         /* ── DEPARTMENT LEADERBOARD ── */
-        .dept-list { flex: 1; display: flex; flex-direction: column; gap: 10px; overflow: hidden; }
+        .dept-cols { flex: 1; display: flex; gap: 24px; overflow: hidden; }
+        .dept-col { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+        .dept-col-label {
+            font-family: 'Barlow Condensed', sans-serif;
+            font-size: 11px; font-weight: 700;
+            letter-spacing: 3px; text-transform: uppercase;
+            color: var(--dim); margin-bottom: 8px;
+        }
+        .dept-list { display: flex; flex-direction: column; gap: 8px; overflow: hidden; }
         .dept-row {
             display: flex;
             align-items: center;
@@ -243,37 +291,41 @@
         </div>
     </div>
 
-    <!-- KPI ROW -->
-    <div class="kpi-row">
-        <div class="kpi">
-            <div class="kpi-label">Total Goals</div>
-            <div class="kpi-value" style="color:var(--text)" id="k-total">27</div>
-            <div class="kpi-note">Across 9 departments</div>
+    <!-- HERO + STATS STRIP -->
+    <div class="hero-strip">
+        <div class="hero-wrap">
+            <div class="hero-number" id="hero-number">—</div>
+            <div class="hero-text">
+                <div class="hero-label" id="hero-label">Goals to unlock the 2% bonus</div>
+                <div class="hero-headline" id="hero-headline">Loading…</div>
+                <div class="hero-sub" id="hero-sub"></div>
+            </div>
         </div>
-        <div class="kpi">
-            <div class="kpi-label">Completed</div>
-            <div class="kpi-value" style="color:var(--green)" id="k-complete">—</div>
-            <div class="kpi-note" id="k-complete-note">goals done</div>
-        </div>
-        <div class="kpi">
-            <div class="kpi-label">On Track</div>
-            <div class="kpi-value" style="color:var(--blue)" id="k-ontrack">—</div>
-            <div class="kpi-note">expected on time</div>
-        </div>
-        <div class="kpi">
-            <div class="kpi-label">At Risk</div>
-            <div class="kpi-value" style="color:var(--gold)" id="k-atrisk">—</div>
-            <div class="kpi-note">need attention</div>
-        </div>
-        <div class="kpi">
-            <div class="kpi-label">Off Track</div>
-            <div class="kpi-value" style="color:var(--red)" id="k-offtrack">—</div>
-            <div class="kpi-note">behind or stalled</div>
-        </div>
-        <div class="kpi">
-            <div class="kpi-label">% Complete</div>
-            <div class="kpi-value" style="color:var(--text)" id="k-pct">—</div>
-            <div class="kpi-note">of all 27 goals</div>
+        <div class="stats-strip">
+            <div class="stat-cell">
+                <div class="stat-lbl">Total</div>
+                <div class="stat-num" id="k-total" style="color:var(--text)">27</div>
+            </div>
+            <div class="stat-cell">
+                <div class="stat-lbl">Completed</div>
+                <div class="stat-num" id="k-complete" style="color:var(--green)">—</div>
+            </div>
+            <div class="stat-cell">
+                <div class="stat-lbl">On Track</div>
+                <div class="stat-num" id="k-ontrack" style="color:var(--blue)">—</div>
+            </div>
+            <div class="stat-cell">
+                <div class="stat-lbl">At Risk</div>
+                <div class="stat-num" id="k-atrisk" style="color:var(--gold)">—</div>
+            </div>
+            <div class="stat-cell">
+                <div class="stat-lbl">Off Track</div>
+                <div class="stat-num" id="k-offtrack" style="color:var(--red)">—</div>
+            </div>
+            <div class="stat-cell">
+                <div class="stat-lbl">% Complete</div>
+                <div class="stat-num" id="k-pct" style="color:var(--text)">—</div>
+            </div>
         </div>
     </div>
 
@@ -305,13 +357,21 @@
                 <canvas id="distChart"></canvas>
             </div>
             <div class="dist-legend" id="dist-legend"></div>
+            <div class="proj-line" id="proj-line" style="display:none"></div>
         </div>
 
         <!-- BY DEPARTMENT -->
         <div class="section no-border-bottom" style="grid-column: 1 / -1; border-right: none;">
             <div class="section-label">By Department — Leaderboard</div>
-            <div class="dept-list" id="dept-list">
-                <div style="color:var(--dim);font-size:14px;">Loading department data…</div>
+            <div class="dept-cols">
+                <div class="dept-col">
+                    <div class="dept-col-label">Carrying the Load</div>
+                    <div class="dept-list" id="dept-leaders"><div style="color:var(--dim);font-size:13px;">Loading…</div></div>
+                </div>
+                <div class="dept-col">
+                    <div class="dept-col-label">Needs Support</div>
+                    <div class="dept-list" id="dept-support"><div style="color:var(--dim);font-size:13px;">Loading…</div></div>
+                </div>
             </div>
         </div>
 
@@ -428,12 +488,11 @@
         const pct      = Math.round((comp / TOTAL) * 100);
         const need     = Math.max(0, BONUS_THRESHOLD - comp);
 
-        set('k-complete',      comp);
-        set('k-complete-note', comp === 1 ? 'goal done' : 'goals done');
-        set('k-ontrack',       ontrack);
-        set('k-atrisk',        atrisk);
-        set('k-offtrack',      offtrack);
-        set('k-pct',           pct + '%');
+        set('k-complete', comp);
+        set('k-ontrack',  ontrack);
+        set('k-atrisk',   atrisk);
+        set('k-offtrack', offtrack);
+        set('k-pct',      pct + '%');
 
         const fillPct = Math.round((comp / TOTAL) * 100);
         document.getElementById('main-fill').style.width = fillPct + '%';
@@ -450,6 +509,35 @@
             threshEl.style.borderColor = 'rgba(255,209,58,0.2)';
             threshEl.style.background  = 'rgba(255,209,58,0.06)';
             set('threshold-text', need + ' more goal' + (need !== 1 ? 's' : '') + ' needed to unlock the bonus (target: 14 of 27 complete)');
+        }
+
+        // Hero area
+        const FY_START   = new Date('2025-07-01');
+        const FY_END     = new Date('2026-06-30');
+        const weeksElapsed = Math.max(1, Math.floor((Date.now() - FY_START) / (7*24*60*60*1000)));
+        const weeksTotal   = Math.round((FY_END - FY_START) / (7*24*60*60*1000));
+        const weeksLeft    = Math.max(0, Math.ceil((FY_END - Date.now()) / (7*24*60*60*1000)));
+        if (comp >= BONUS_THRESHOLD) {
+            set('hero-number',   '\u2713');
+            set('hero-label',    'Goals bonus');
+            set('hero-headline', 'GOALS BONUS SECURED');
+            set('hero-sub',      comp + ' of ' + BONUS_THRESHOLD + ' threshold goals complete');
+        } else {
+            set('hero-number',   need);
+            set('hero-label',    'Goals to unlock the 2% bonus');
+            set('hero-headline', 'GOALS TO UNLOCK THE 2% BONUS');
+            set('hero-sub',      comp + ' of ' + BONUS_THRESHOLD + ' complete \u00b7 ~' + weeksLeft + ' weeks remaining');
+        }
+
+        // Projection line (suppressed once bonus secured)
+        const projected = Math.min(TOTAL, Math.round((comp / weeksElapsed) * weeksTotal));
+        const projEl = document.getElementById('proj-line');
+        if (projEl && comp < BONUS_THRESHOLD) {
+            projEl.style.display = '';
+            projEl.style.color   = projected >= BONUS_THRESHOLD ? 'var(--green)' : projected >= 10 ? 'var(--gold)' : 'var(--red)';
+            projEl.textContent   = 'At current rate: ' + projected + ' of ' + TOTAL + ' will be complete by 30 Jun 2026';
+        } else if (projEl) {
+            projEl.style.display = 'none';
         }
 
         renderDist(statuses);
@@ -503,28 +591,42 @@
         }).join('');
     }
 
-    function renderDepts(depts) {
-        const sorted = DEPT_NAMES.slice().sort((a, b) => {
-            const ca = depts[a]?.completed || 0;
-            const cb = depts[b]?.completed || 0;
-            return cb - ca || a.localeCompare(b);
-        });
+    function deptRowHtml(dept, depts) {
+        const d = depts[dept] || { completed: 0, total: 3 };
+        const fillPct     = Math.round((d.completed / d.total) * 100);
+        const name        = DEPT_SHORT[dept] || dept;
+        const scoreColor  = d.completed === 3 ? 'var(--green)' : d.completed === 2 ? 'var(--blue)' : d.completed === 1 ? 'var(--gold)' : 'var(--dim)';
+        const borderColor = d.completed === 3 ? 'var(--green)' : d.completed >= 1 ? 'var(--blue)' : 'var(--border)';
+        const fillColor   = d.completed === 3 ? '#00E887' : d.completed === 2 ? '#00CFFF' : d.completed === 1 ? '#FFD13A' : '#334155';
+        return `<div class="dept-row" style="border-left-color:${borderColor}">
+            <div class="dept-name">${name}</div>
+            <div class="dept-bar-wrap"><div class="dept-track"><div class="dept-fill" style="width:${fillPct}%;background:${fillColor}"></div></div></div>
+            <div class="dept-score" style="color:${scoreColor}">${d.completed}/${d.total}</div>
+        </div>`;
+    }
 
-        document.getElementById('dept-list').innerHTML = sorted.map((dept, i) => {
-            const d = depts[dept] || { completed: 0, total: 3 };
-            const fillPct = Math.round((d.completed / d.total) * 100);
-            const name  = DEPT_SHORT[dept] || dept;
-            const medal = i === 0 && d.completed > 0 ? '\uD83E\uDD47 ' : '';
-            const scoreColor  = d.completed === 3 ? 'var(--green)' : d.completed === 2 ? 'var(--blue)' : d.completed === 1 ? 'var(--gold)' : 'var(--dim)';
-            const borderColor = d.completed === 3 ? 'var(--green)' : d.completed >= 1  ? 'var(--blue)' : 'var(--border)';
-            const fillColor   = d.completed === 3 ? '#00E887' : d.completed === 2 ? '#00CFFF' : d.completed === 1 ? '#FFD13A' : '#334155';
-            return `<div class="dept-row" style="border-left-color:${borderColor}">
-                <div class="dept-rank">${i + 1}</div>
-                <div class="dept-name">${medal}${name}</div>
-                <div class="dept-bar-wrap"><div class="dept-track"><div class="dept-fill" style="width:${fillPct}%;background:${fillColor}"></div></div></div>
-                <div class="dept-score" style="color:${scoreColor}">${d.completed}/${d.total}</div>
-            </div>`;
-        }).join('');
+    function renderDepts(depts) {
+        const leaders = DEPT_NAMES
+            .filter(d => (depts[d]?.completed || 0) >= 2)
+            .sort((a, b) => (depts[b]?.completed || 0) - (depts[a]?.completed || 0))
+            .slice(0, 3);
+        const support = DEPT_NAMES
+            .filter(d => (depts[d]?.completed || 0) === 0)
+            .slice(0, 3);
+
+        const leadersEl = document.getElementById('dept-leaders');
+        const supportEl = document.getElementById('dept-support');
+
+        if (leadersEl) {
+            leadersEl.innerHTML = leaders.length
+                ? leaders.map(d => deptRowHtml(d, depts)).join('')
+                : '<div style="color:var(--dim);font-size:13px;padding:12px 0">No department has 2+ goals complete yet</div>';
+        }
+        if (supportEl) {
+            supportEl.innerHTML = support.length
+                ? support.map(d => deptRowHtml(d, depts)).join('')
+                : '<div style="color:var(--dim);font-size:13px;padding:12px 0">All departments have at least one goal complete</div>';
+        }
     }
 
     function set(id, val) { const el = document.getElementById(id); if (el) el.textContent = val; }
