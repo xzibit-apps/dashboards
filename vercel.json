@@ -1,0 +1,18 @@
+{
+  "rewrites": [
+    { "source": "/bonus",             "destination": "/v2-bonus-dashboard.html" },
+    { "source": "/goals-summary",     "destination": "/v2-goals-summary.html" },
+    { "source": "/goals-departments", "destination": "/v2-goals-departments.html" },
+    { "source": "/",                  "destination": "/index.html" }
+  ],
+  "cleanUrls": true,
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        { "key": "X-Frame-Options",   "value": "SAMEORIGIN" },
+        { "key": "Referrer-Policy",   "value": "strict-origin-when-cross-origin" }
+      ]
+    }
+  ]
+}

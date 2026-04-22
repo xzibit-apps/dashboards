@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Xzibit Dashboards</title>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@700;900&family=Barlow:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: #05080f;
+      color: #e8eaf0;
+      font-family: 'Barlow', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 40px 24px;
+    }
+
+    header {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-weight: 900;
+      font-size: 2rem;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: #ffffff;
+      margin-bottom: 12px;
+    }
+
+    .subtitle {
+      font-size: 0.95rem;
+      color: #6b7280;
+      margin-bottom: 48px;
+    }
+
+    main {
+      display: flex;
+      gap: 24px;
+      flex-wrap: wrap;
+      justify-content: center;
+      max-width: 960px;
+      width: 100%;
+    }
+
+    a.card {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      background: #0d1117;
+      border: 1px solid #1f2937;
+      border-radius: 12px;
+      padding: 32px 28px;
+      text-decoration: none;
+      color: inherit;
+      flex: 1;
+      min-width: 240px;
+      max-width: 280px;
+      transition: border-color 0.15s, background 0.15s;
+    }
+
+    a.card:hover {
+      border-color: #3b82f6;
+      background: #111827;
+    }
+
+    .card-icon {
+      font-size: 1.6rem;
+      line-height: 1;
+    }
+
+    .card-title {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-weight: 700;
+      font-size: 1.25rem;
+      letter-spacing: 0.02em;
+      text-transform: uppercase;
+      color: #ffffff;
+    }
+
+    .card-desc {
+      font-size: 0.875rem;
+      color: #9ca3af;
+      line-height: 1.5;
+    }
+
+    footer {
+      margin-top: 56px;
+      font-size: 0.8rem;
+      color: #374151;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <header>Xzibit Dashboards</header>
+  <p class="subtitle">FY2025–26 &middot; Live from the Google Sheet &middot; Refreshes every 15 min</p>
+
+  <main>
+    <a class="card" href="/bonus">
+      <span class="card-icon">💰</span>
+      <span class="card-title">Bonus Status</span>
+      <span class="card-desc">Revenue, margin, and bonus threshold tracking against the FY target.</span>
+    </a>
+    <a class="card" href="/goals-summary">
+      <span class="card-icon">🎯</span>
+      <span class="card-title">Goals Summary</span>
+      <span class="card-desc">Company-wide goal progress — overall completion rate across all teams.</span>
+    </a>
+    <a class="card" href="/goals-departments">
+      <span class="card-icon">📊</span>
+      <span class="card-title">Goals by Department</span>
+      <span class="card-desc">Department-level breakdown of goal completion and status.</span>
+    </a>
+  </main>
+
+  <footer>Live data &middot; Deployed on Vercel &middot; For Fusion Signage TV playback</footer>
+</body>
+</html>
