@@ -30,7 +30,7 @@
         }
         .dashboard { width: 100%; height: 100%; display: flex; flex-direction: column; }
 
-        /* ââ TOP BANNER ââ */
+        /* ── TOP BANNER ── */
         .bonus-banner {
             display: flex;
             align-items: center;
@@ -107,7 +107,7 @@
         .updated.stale::before  { background: var(--gold);  animation: freshness-pulse 2s ease-in-out infinite; }
         .updated.broken::before { background: var(--red);   animation: freshness-pulse 1.5s ease-in-out infinite; }
 
-        /* ââ 3-COLUMN MAIN ââ */
+        /* ── 3-COLUMN MAIN ── */
         .main-grid {
             flex: 1;
             display: grid;
@@ -241,7 +241,7 @@
             min-height: 0;
         }
 
-        /* ââ BOTTOM CHECKLIST ââ */
+        /* ── BOTTOM CHECKLIST ── */
         .checklist-bar {
             flex-shrink: 0;
             display: flex;
@@ -322,16 +322,16 @@
         <div class="banner-left">
             <div class="logo-x">X</div>
             <div>
-                <div class="banner-headline" id="banner-headline">BONUS STATUS: â OF 3 METRICS MET</div>
-                <div class="banner-sub">XZIBIT Â· 2025â26 FINANCIAL YEAR</div>
+                <div class="banner-headline" id="banner-headline">BONUS STATUS: — OF 3 METRICS MET</div>
+                <div class="banner-sub">XZIBIT · 2025–26 FINANCIAL YEAR</div>
             </div>
         </div>
         <div class="banner-status">
-            <div class="status-pill at-risk" id="bonus-pill">â³ LOADING</div>
+            <div class="status-pill at-risk" id="bonus-pill">⏳ LOADING</div>
         </div>
         <div class="banner-right">
-            <div class="season">2025â26</div>
-            <div class="updated" id="updated">Updatingâ¦</div>
+            <div class="season">2025–26</div>
+            <div class="updated" id="updated">Updating…</div>
         </div>
     </div>
 
@@ -342,12 +342,12 @@
         <div class="col">
             <div class="col-header">
                 <div class="col-label">Revenue</div>
-                <div class="col-badge fail" id="rev-badge">â  AT RISK</div>
+                <div class="col-badge fail" id="rev-badge">⚠ AT RISK</div>
             </div>
             <div class="big-number blue" id="rev-value">$0.00M</div>
             <div class="metric-target">Target: <span id="rev-target">$10.34M</span> (full year)</div>
-            <div class="metric-variance neg" id="rev-variance">â</div>
-            <div class="metric-interp" id="rev-interp">Loadingâ¦</div>
+            <div class="metric-variance neg" id="rev-variance">—</div>
+            <div class="metric-interp" id="rev-interp">Loading…</div>
 
             <div class="progress-wrap">
                 <div class="progress-label">
@@ -368,12 +368,12 @@
         <div class="col">
             <div class="col-header">
                 <div class="col-label">Gross Margin</div>
-                <div class="col-badge pass" id="mgn-badge">â ON TARGET</div>
+                <div class="col-badge pass" id="mgn-badge">✓ ON TARGET</div>
             </div>
             <div class="big-number gold" id="mgn-value">0.0%</div>
-            <div class="metric-target">Target: <span id="mgn-target">â¥31.66%</span></div>
-            <div class="metric-variance pos" id="mgn-variance">â</div>
-            <div class="metric-interp" id="mgn-interp">Loadingâ¦</div>
+            <div class="metric-target">Target: <span id="mgn-target">≥31.66%</span></div>
+            <div class="metric-variance pos" id="mgn-variance">—</div>
+            <div class="metric-interp" id="mgn-interp">Loading…</div>
 
             <div class="progress-wrap">
                 <div class="progress-label">
@@ -394,12 +394,12 @@
         <div class="col">
             <div class="col-header">
                 <div class="col-label">Team Goals</div>
-                <div class="col-badge fail" id="gls-badge">â BELOW TARGET</div>
+                <div class="col-badge fail" id="gls-badge">✗ BELOW TARGET</div>
             </div>
             <div class="big-number green" id="gls-value">0 / 27</div>
             <div class="metric-target">Target: 50% complete (14 of 27)</div>
-            <div class="metric-variance neg" id="gls-variance">â</div>
-            <div class="metric-interp" id="gls-interp">Loadingâ¦</div>
+            <div class="metric-variance neg" id="gls-variance">—</div>
+            <div class="metric-interp" id="gls-interp">Loading…</div>
 
             <div class="progress-wrap">
                 <div class="progress-label">
@@ -427,21 +427,21 @@
         <div class="checklist-title">Bonus Requirements</div>
         <div class="checklist-items">
             <div class="check-item">
-                <div class="check-icon fail" id="chk-rev">â</div>
+                <div class="check-icon fail" id="chk-rev">✕</div>
                 <div>
                     <div class="check-text">Revenue Target</div>
                     <div class="check-note" id="chk-rev-note">Behind full-year target</div>
                 </div>
             </div>
             <div class="check-item">
-                <div class="check-icon pass" id="chk-mgn">â</div>
+                <div class="check-icon pass" id="chk-mgn">✓</div>
                 <div>
                     <div class="check-text">Gross Margin Target</div>
                     <div class="check-note" id="chk-mgn-note">Above minimum threshold</div>
                 </div>
             </div>
             <div class="check-item">
-                <div class="check-icon fail" id="chk-gls">â</div>
+                <div class="check-icon fail" id="chk-gls">✕</div>
                 <div>
                     <div class="check-text">50% Goals Achieved</div>
                     <div class="check-note" id="chk-gls-note">More goals needed</div>
