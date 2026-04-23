@@ -244,13 +244,13 @@
         <div class="banner-left">
             <div class="logo-x">X</div>
             <div>
-                <div class="banner-headline" id="banner-headline">PROJECTED BONUS: — OF 5%</div>
-                <div class="banner-tail" id="banner-tail">Loading…</div>
+                <div class="banner-headline" id="banner-headline"></div>
+                <div class="banner-tail" id="banner-tail"></div>
             </div>
         </div>
         <div class="banner-right">
             <div class="season">2025–26</div>
-            <div class="updated" id="updated">Updating…</div>
+            <div class="updated" id="updated"></div>
         </div>
     </div>
 
@@ -265,12 +265,12 @@
             <div class="tracking-group">
                 <div class="tracking-label">Tracking</div>
                 <div class="tracking-meta">
-                    <div class="tracking-pct blue" id="inc-tracking">0.0%</div>
+                    <div class="tracking-pct blue" id="inc-tracking"></div>
                     <div class="secured-pill hidden" id="inc-secured">✓ secured · cannot regress</div>
                 </div>
             </div>
-            <div class="story-line-1" id="inc-story1">$0M of $10.34M</div>
-            <div class="story-line-2" id="inc-story2">Loading…</div>
+            <div class="story-line-1" id="inc-story1"></div>
+            <div class="story-line-2" id="inc-story2"></div>
             <div class="chart-area">
                 <canvas id="revenueChart"></canvas>
             </div>
@@ -284,11 +284,11 @@
             <div class="tracking-group">
                 <div class="tracking-label">Tracking</div>
                 <div class="tracking-meta">
-                    <div class="tracking-pct gold" id="mgn-tracking">0.0%</div>
+                    <div class="tracking-pct gold" id="mgn-tracking"></div>
                 </div>
             </div>
-            <div class="story-line-1" id="mgn-story1">YTD margin —</div>
-            <div class="story-line-2" id="mgn-story2">Loading…</div>
+            <div class="story-line-1" id="mgn-story1"></div>
+            <div class="story-line-2" id="mgn-story2"></div>
             <div class="chart-area">
                 <canvas id="marginChart"></canvas>
             </div>
@@ -302,12 +302,12 @@
             <div class="tracking-group">
                 <div class="tracking-label">Tracking</div>
                 <div class="tracking-meta">
-                    <div class="tracking-pct green" id="gls-tracking">0.0%</div>
+                    <div class="tracking-pct green" id="gls-tracking"></div>
                     <div class="secured-pill hidden" id="gls-secured">✓ secured · cannot regress</div>
                 </div>
             </div>
-            <div class="story-line-1" id="gls-story1">0 of 27 completed</div>
-            <div class="story-line-2" id="gls-story2">Loading…</div>
+            <div class="story-line-1" id="gls-story1"></div>
+            <div class="story-line-2" id="gls-story2"></div>
             <div class="stacked-container">
                 <canvas id="goalsChart"></canvas>
             </div>
@@ -357,6 +357,10 @@
         return result;
     }
     function parseNum(v) { return parseFloat(String(v).replace(/[$,%"]/g,'').trim()) || 0; }
+    function fmtCurrency(v) {
+        if (Math.abs(v) >= 100000) return '$' + (v / 1e6).toFixed(1) + 'M';
+        return '$' + Math.round(Math.abs(v) / 1000) + 'k';
+    }
 
     // ── Bonus formula ────────────────────────────────────────────────────────
     function computeBonus({ ytdActualIncome, incomeTarget, ytdMargin, marginFloor, marginStretch, goalsCompleted, goalsThreshold }) {
@@ -506,14 +510,11 @@
         set('inc-tracking', bonus.income.earned.toFixed(1) + '%');
         const incSecuredEl = document.getElementById('inc-secured');
         if (incSecuredEl) incSecuredEl.className = 'secured-pill' + (bonus.income.secured ? '' : ' hidden');
-        const revM = (rev / 1e6).toFixed(1);
-        const tgtM = (incomeTarget / 1e6).toFixed(2);
-        set('inc-story1', '$' + revM + 'M of $' + tgtM + 'M');
+        set('inc-story1', fmtCurrency(rev) + ' of ' + fmtCurrency(incomeTarget));
         if (rev >= incomeTarget) {
             set('inc-story2', 'Full-year target hit');
         } else {
-            const shortM = ((incomeTarget - rev) / 1e6).toFixed(1);
-            set('inc-story2', '$' + shortM + 'M short · binary target');
+            set('inc-story2', fmtCurrency(incomeTarget - rev) + ' short · binary target');
         }
 
         // ── MARGIN COLUMN
@@ -555,7 +556,7 @@
         if (bonus.income.earned >= bonus.income.max &&
             bonus.margin.earned >= bonus.margin.max &&
             bonus.goals.earned  >= bonus.goals.max) {
-            return 'TRACKING TOWARD FULL 5% BY JUNE 30';
+            return 'TRACKING TOWARD FULL 5% BY JUN 30';
         }
         // Nothing tracking at all
         if (bonus.total.earned === 0) {
@@ -569,8 +570,7 @@
         } else if (bonus.income.earned > 0) {
             parts.push('INCOME TRACKING');
         } else {
-            const shortM = Math.max(0, (incTarget - rev) / 1e6).toFixed(1);
-            parts.push('INCOME $' + shortM + 'M SHORT');
+            parts.push('INCOME ' + fmtCurrency(Math.max(0, incTarget - rev)) + ' SHORT');
         }
         if (bonus.margin.earned >= bonus.margin.max) {
             // at max — omit
@@ -831,6 +831,7 @@
         el.className = 'updated ' + state;
         if (state === 'fresh')       el.textContent = 'Updated ' + timestamp;
         else if (state === 'stale')  el.textContent = 'Updated ' + timestamp + ' · stale';
+        else if (state === 'cached') el.textContent = 'Updated ' + timestamp + ' · cached';
         else                         el.textContent = 'DATA STALE · check sheet access';
     }
 
@@ -861,8 +862,13 @@
                 processGoals(gls);
                 const hasFinancial = (window.fd?.monthlyActualIncome || []).some(v => v > 0);
                 const hasGoals     = (window.gd?.goals || []).length > 0;
-                if (hasFinancial && hasGoals) lastSuccessAt = Date.now();
-                else console.warn('[bonus] Parse returned no data rows — not marking as fresh');
+                if (hasFinancial && hasGoals) {
+                    lastSuccessAt = Date.now();
+                    try {
+                        localStorage.setItem('xzdash.fin.v1',   JSON.stringify({ csv: fin, at: lastSuccessAt }));
+                        localStorage.setItem('xzdash.goals.v1', JSON.stringify({ csv: gls, at: lastSuccessAt }));
+                    } catch (_) {}
+                } else console.warn('[bonus] Parse returned no data rows — not marking as fresh');
             }
         } catch (e) {
             console.error('[bonus] Fetch error:', e);
@@ -870,6 +876,24 @@
         render();
         updateFreshness();
     }
+
+    (function bootCache() {
+        try {
+            const finRaw = localStorage.getItem('xzdash.fin.v1');
+            const glsRaw = localStorage.getItem('xzdash.goals.v1');
+            if (!finRaw || !glsRaw) return;
+            const finC = JSON.parse(finRaw);
+            const glsC = JSON.parse(glsRaw);
+            if (Date.now() - finC.at > 86400000 || Date.now() - glsC.at > 86400000) return;
+            processFinancial(finC.csv);
+            processGoals(glsC.csv);
+            render();
+            const ts = new Date(Math.min(finC.at, glsC.at)).toLocaleString('en-AU', {
+                hour: '2-digit', minute: '2-digit', hour12: true
+            });
+            renderFreshness('cached', ts);
+        } catch (_) {}
+    })();
 
     fetchData();
     setInterval(fetchData, 900000);
