@@ -116,9 +116,10 @@
             transform: rotate(-90deg);
             transition: stroke-dashoffset 1.2s cubic-bezier(0.4, 0, 0.2, 1);
         }
-        #ring-income { stroke: var(--blue);  stroke-dasharray: 2262; stroke-dashoffset: 2262; }
-        #ring-margin { stroke: var(--gold);  stroke-dasharray: 1696; stroke-dashoffset: 1696; }
-        #ring-goals  { stroke: var(--green); stroke-dasharray: 1131; stroke-dashoffset: 1131; }
+        /* dasharray/dashoffset live as inline style on each element so JS setProperty can drive the transition */
+        #ring-income { stroke: var(--blue);  }
+        #ring-margin { stroke: var(--gold);  }
+        #ring-goals  { stroke: var(--green); }
 
         /* ── CARDS PANEL ── */
         .cards-panel {
@@ -249,10 +250,10 @@
                 <circle class="ring-track" r="270"/>
                 <circle class="ring-track" r="180"/>
 
-                <!-- Live rings -->
-                <circle id="ring-income" r="360"/>
-                <circle id="ring-margin" r="270"/>
-                <circle id="ring-goals"  r="180"/>
+                <!-- Live rings — dasharray/dashoffset as inline style so CSS transition can animate them -->
+                <circle id="ring-income" r="360" style="stroke-dasharray:2262;stroke-dashoffset:2262"/>
+                <circle id="ring-margin" r="270" style="stroke-dasharray:1696;stroke-dashoffset:1696"/>
+                <circle id="ring-goals"  r="180" style="stroke-dasharray:1131;stroke-dashoffset:1131"/>
 
                 <!-- Ring labels at 3-o'clock position -->
                 <text x="375" y="-8" fill="var(--blue)"  font-family="'Barlow Condensed',sans-serif" font-size="15" font-weight="700" letter-spacing="3">INCOME</text>
@@ -447,7 +448,7 @@
 
     function setRing(id, circumference, ratio) {
         const el = document.getElementById(id);
-        if (el) el.style.strokeDashoffset = circumference * (1 - Math.min(1, Math.max(0, ratio)));
+        if (el) el.style.setProperty('stroke-dashoffset', circumference * (1 - Math.min(1, Math.max(0, ratio))));
     }
 
     function setMiniBar(id, ratio, color) {
