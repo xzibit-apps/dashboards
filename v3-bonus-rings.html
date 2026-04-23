@@ -1,0 +1,661 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=1920, initial-scale=1.0">
+    <title>Xzibit Bonus · Three Rings 2025-26</title>
+    <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800;900&family=Barlow:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --bg:       #05080f;
+            --surface:  #0c1222;
+            --surface2: #111827;
+            --border:   rgba(255,255,255,0.08);
+            --blue:     #00CFFF;
+            --gold:     #FFD13A;
+            --green:    #00E887;
+            --orange:   #FF8C1A;
+            --red:      #FF4455;
+            --text:     #FFFFFF;
+            --dim:      #8896B0;
+        }
+        html, body {
+            width: 100vw; height: 100vh;
+            overflow: hidden;
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'Barlow', sans-serif;
+        }
+        .dashboard { width: 100%; height: 100%; display: flex; flex-direction: column; }
+
+        /* ── HEADER ── */
+        .hdr {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 48px;
+            height: 88px;
+            background: var(--surface);
+            border-bottom: 3px solid var(--border);
+            flex-shrink: 0;
+        }
+        .hdr-left { display: flex; align-items: center; gap: 20px; }
+        .logo-x {
+            width: 52px; height: 52px;
+            background: var(--blue);
+            color: #000;
+            display: flex; align-items: center; justify-content: center;
+            font-family: 'Barlow Condensed', sans-serif;
+            font-size: 34px; font-weight: 900;
+            border-radius: 6px; flex-shrink: 0;
+        }
+        .hdr-line1 {
+            font-family: 'Barlow Condensed', sans-serif;
+            font-size: 34px; font-weight: 900;
+            letter-spacing: 2px; text-transform: uppercase; line-height: 1;
+        }
+        .hdr-line2 {
+            font-size: 12px; color: var(--dim);
+            letter-spacing: 2px; text-transform: uppercase; margin-top: 5px;
+        }
+        .hdr-right { text-align: right; }
+        .season {
+            font-family: 'Barlow Condensed', sans-serif;
+            font-size: 22px; font-weight: 700;
+            color: var(--gold); letter-spacing: 2px;
+        }
+        @keyframes freshness-pulse {
+            0%, 100% { opacity: 1; }
+            50%       { opacity: 0.35; }
+        }
+        .updated {
+            font-size: 11px; color: var(--dim); margin-top: 3px;
+            display: flex; align-items: center; gap: 6px; justify-content: flex-end;
+        }
+        .updated::before {
+            content: ''; display: inline-block;
+            width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
+            background: var(--dim);
+        }
+        .updated.fresh::before  { background: var(--green); }
+        .updated.stale::before  { background: var(--gold);  animation: freshness-pulse 2s ease-in-out infinite; }
+        .updated.broken::before { background: var(--red);   animation: freshness-pulse 1.5s ease-in-out infinite; }
+
+        /* ── BODY ── */
+        .body {
+            flex: 1;
+            display: flex;
+            overflow: hidden;
+        }
+
+        /* ── RINGS PANEL ── */
+        .rings-panel {
+            width: 840px;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            border-right: 1px solid var(--border);
+        }
+        .rings-svg {
+            width: 820px;
+            height: 820px;
+        }
+        .ring-track {
+            fill: none;
+            stroke: rgba(255,255,255,0.06);
+            stroke-width: 28;
+        }
+        #ring-income, #ring-margin, #ring-goals {
+            fill: none;
+            stroke-width: 28;
+            stroke-linecap: round;
+            transform-origin: center;
+            transform: rotate(-90deg);
+            transition: stroke-dashoffset 1.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        #ring-income { stroke: var(--blue);  stroke-dasharray: 2262; stroke-dashoffset: 2262; }
+        #ring-margin { stroke: var(--gold);  stroke-dasharray: 1696; stroke-dashoffset: 1696; }
+        #ring-goals  { stroke: var(--green); stroke-dasharray: 1131; stroke-dashoffset: 1131; }
+
+        /* ── CARDS PANEL ── */
+        .cards-panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+        .card {
+            flex: 1;
+            padding: 28px 44px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            border-left: 4px solid transparent;
+            position: relative;
+        }
+        .card:last-child { border-bottom: none; }
+        .card-income { border-left-color: var(--blue); }
+        .card-margin  { border-left-color: var(--gold); }
+        .card-goals  { border-left-color: var(--green); }
+
+        .card-label {
+            font-family: 'Barlow Condensed', sans-serif;
+            font-size: 13px; font-weight: 700;
+            letter-spacing: 4px; text-transform: uppercase;
+            color: var(--dim);
+            display: flex; align-items: center; gap: 10px;
+        }
+        .card-hero {
+            font-family: 'Barlow Condensed', sans-serif;
+            font-size: 52px; font-weight: 900;
+            line-height: 1; letter-spacing: 1px;
+        }
+        .card-income .card-hero { color: var(--blue); }
+        .card-margin  .card-hero { color: var(--gold); }
+        .card-goals  .card-hero { color: var(--green); }
+
+        .card-context {
+            font-size: 17px; font-weight: 400;
+            color: var(--dim);
+        }
+        .secured-pill {
+            display: inline-flex;
+            align-items: center;
+            font-family: 'Barlow Condensed', sans-serif;
+            font-size: 11px; font-weight: 700;
+            letter-spacing: 1px; text-transform: uppercase;
+            background: rgba(0,232,135,0.12);
+            color: var(--green);
+            border: 1px solid rgba(0,232,135,0.35);
+            border-radius: 4px;
+            padding: 4px 10px;
+            white-space: nowrap;
+            align-self: flex-start;
+        }
+        .mini-bar-track {
+            height: 6px;
+            background: rgba(255,255,255,0.07);
+            border-radius: 3px;
+            overflow: hidden;
+            margin-top: 4px;
+        }
+        .mini-bar-fill {
+            height: 100%;
+            border-radius: 3px;
+            width: 0%;
+            transition: width 1.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .card-micro {
+            font-family: 'Barlow Condensed', sans-serif;
+            font-size: 13px; font-weight: 600;
+            letter-spacing: 2px; text-transform: uppercase;
+            color: var(--dim);
+        }
+
+        /* ── FOOTER ── */
+        .footer {
+            height: 56px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 48px;
+            background: var(--surface);
+            border-top: 2px solid var(--border);
+            flex-shrink: 0;
+        }
+        .footer-tag {
+            font-family: 'Barlow Condensed', sans-serif;
+            font-size: 14px; font-weight: 600;
+            letter-spacing: 3px; text-transform: uppercase;
+            color: var(--dim);
+        }
+        .footer-leaders {
+            font-family: 'Barlow Condensed', sans-serif;
+            font-size: 14px; font-weight: 600;
+            letter-spacing: 2px;
+            color: var(--text);
+        }
+    </style>
+</head>
+<body>
+<div class="dashboard">
+
+    <!-- HEADER -->
+    <div class="hdr">
+        <div class="hdr-left">
+            <div class="logo-x">X</div>
+            <div>
+                <div class="hdr-line1" id="hdr-line1"></div>
+                <div class="hdr-line2" id="hdr-line2"></div>
+            </div>
+        </div>
+        <div class="hdr-right">
+            <div class="season">2025–26</div>
+            <div class="updated" id="updated"></div>
+        </div>
+    </div>
+
+    <!-- BODY -->
+    <div class="body">
+
+        <!-- RINGS -->
+        <div class="rings-panel">
+            <svg class="rings-svg" viewBox="-420 -420 840 840">
+                <!-- Track rings -->
+                <circle class="ring-track" r="360"/>
+                <circle class="ring-track" r="270"/>
+                <circle class="ring-track" r="180"/>
+
+                <!-- Live rings -->
+                <circle id="ring-income" r="360"/>
+                <circle id="ring-margin" r="270"/>
+                <circle id="ring-goals"  r="180"/>
+
+                <!-- Ring labels at 3-o'clock position -->
+                <text x="375" y="-8" fill="var(--blue)"  font-family="'Barlow Condensed',sans-serif" font-size="15" font-weight="700" letter-spacing="3">INCOME</text>
+                <text x="285" y="-8" fill="var(--gold)"  font-family="'Barlow Condensed',sans-serif" font-size="15" font-weight="700" letter-spacing="3">MARGIN</text>
+                <text x="193" y="-8" fill="var(--green)" font-family="'Barlow Condensed',sans-serif" font-size="15" font-weight="700" letter-spacing="3">GOALS</text>
+
+                <!-- Center block -->
+                <text id="center-overline" y="-52" text-anchor="middle"
+                    fill="#8896B0" font-family="'Barlow Condensed',sans-serif"
+                    font-size="18" font-weight="700" letter-spacing="5"></text>
+                <text id="center-number" y="28" text-anchor="middle"
+                    fill="#FFFFFF" font-family="'Barlow Condensed',sans-serif"
+                    font-size="96" font-weight="900"></text>
+                <text id="center-sub" y="68" text-anchor="middle"
+                    fill="#8896B0" font-family="'Barlow Condensed',sans-serif"
+                    font-size="17" font-weight="600" letter-spacing="1"></text>
+            </svg>
+        </div>
+
+        <!-- CARDS -->
+        <div class="cards-panel">
+
+            <div class="card card-income">
+                <div class="card-label">Income <span style="color:var(--blue);margin-left:4px">· 1%</span></div>
+                <div class="card-hero" id="inc-hero"></div>
+                <div class="secured-pill" id="inc-secured" style="display:none">✓ secured · cannot regress</div>
+                <div class="card-context" id="inc-context"></div>
+                <div class="mini-bar-track"><div class="mini-bar-fill" id="inc-bar"></div></div>
+                <div class="card-micro" id="inc-bonus"></div>
+            </div>
+
+            <div class="card card-margin">
+                <div class="card-label">Gross Margin <span style="color:var(--gold);margin-left:4px">· 2%</span></div>
+                <div class="card-hero" id="mgn-hero"></div>
+                <div class="card-context" id="mgn-context"></div>
+                <div class="mini-bar-track"><div class="mini-bar-fill" id="mgn-bar"></div></div>
+                <div class="card-micro" id="mgn-bonus"></div>
+            </div>
+
+            <div class="card card-goals">
+                <div class="card-label">Dept Goals <span style="color:var(--green);margin-left:4px">· 2%</span></div>
+                <div class="card-hero" id="gls-hero"></div>
+                <div class="secured-pill" id="gls-secured" style="display:none">✓ secured · cannot regress</div>
+                <div class="card-context" id="gls-context"></div>
+                <div class="mini-bar-track"><div class="mini-bar-fill" id="gls-bar"></div></div>
+                <div class="card-micro" id="gls-bonus"></div>
+            </div>
+
+        </div>
+    </div><!-- /body -->
+
+    <!-- FOOTER -->
+    <div class="footer">
+        <div class="footer-tag" id="footer-tag"></div>
+        <div class="footer-leaders" id="footer-leaders"></div>
+    </div>
+
+</div><!-- /dashboard -->
+
+<script>
+    const CONFIG = {
+        financialSheetUrl: 'https://docs.google.com/spreadsheets/d/1VumQnhFi2siIvaWHPZ1LuMdFiqI6ifjS_sHJIAKRi4c/export?format=csv&gid=864771061',
+        goalsSheetUrl:     'https://docs.google.com/spreadsheets/d/1VumQnhFi2siIvaWHPZ1LuMdFiqI6ifjS_sHJIAKRi4c/export?format=csv&gid=368453036'
+    };
+
+    const DEPT_NAMES = ['AV','Design','Expo','Finance','People, Culture & Performance','Permanent','Production','Systems','Warehouse'];
+
+    const REV_TARGET  = 10342000;
+    const MGN_FLOOR   = 31.7;
+    const MGN_STRETCH = 33.7;
+    const GOALS_TOTAL = 27;
+    const GOALS_BONUS = 14;
+
+    const FY_END = new Date('2026-06-30');
+
+    // ── Parsers ──────────────────────────────────────────────────────────────
+    function parseCSVLine(line) {
+        const result = []; let current = ''; let inQuotes = false;
+        for (let i = 0; i < line.length; i++) {
+            const c = line[i];
+            if (c === '"') { if (inQuotes && line[i+1] === '"') { current += '"'; i++; } else { inQuotes = !inQuotes; } }
+            else if (c === ',' && !inQuotes) { result.push(current.trim()); current = ''; }
+            else { current += c; }
+        }
+        result.push(current.trim());
+        return result;
+    }
+    function parseNum(v) { return parseFloat(String(v).replace(/[$,%"]/g,'').trim()) || 0; }
+
+    function fmtCurrency(v) {
+        if (Math.abs(v) >= 100000) return '$' + (v / 1e6).toFixed(1) + 'M';
+        return '$' + Math.round(Math.abs(v) / 1000) + 'k';
+    }
+
+    // ── Bonus formula ────────────────────────────────────────────────────────
+    function computeBonus({ ytdActualIncome, incomeTarget, ytdMargin, marginFloor, marginStretch, goalsCompleted, goalsThreshold }) {
+        const incomeBonus = ytdActualIncome >= incomeTarget ? 1.0 : 0.0;
+        let marginBonus;
+        if (ytdMargin >= marginStretch)    marginBonus = 2.0;
+        else if (ytdMargin >= marginFloor) marginBonus = 1.0 + ((ytdMargin - marginFloor) / (marginStretch - marginFloor));
+        else                               marginBonus = 0.0;
+        const goalsBonus = goalsCompleted >= goalsThreshold ? 2.0 : 0.0;
+        return {
+            income: { earned: incomeBonus,  max: 1.0, secured: incomeBonus === 1.0 },
+            margin: { earned: marginBonus,  max: 2.0, secured: false },
+            goals:  { earned: goalsBonus,   max: 2.0, secured: goalsBonus === 2.0 },
+            total:  { earned: incomeBonus + marginBonus + goalsBonus, max: 5.0 },
+        };
+    }
+
+    // ── Financial parser ─────────────────────────────────────────────────────
+    const FINANCIAL_LABELS = {
+        'budget income':                'monthlyBudgetIncome',
+        'cumulative budget income':     'cumulativeBudgetIncome',
+        'budget cumulative gp margin':  'cumulativeBudgetMargin',
+        'target cumulative gp margin':  'cumulativeTargetMargin',
+        'cumulative actual income':     'cumulativeActualIncome',
+        'total actual income (fathom)': 'monthlyActualIncome',
+        'actual gp margin':             'monthlyActualMargin',
+        'cumulative gross profit':      'cumulativeGrossProfit',
+    };
+    const MARGIN_PROPS = new Set(['cumulativeBudgetMargin','cumulativeTargetMargin','monthlyActualMargin']);
+
+    function processFinancial(csv) {
+        const lines = csv.split('\n');
+        const fd = {};
+        lines.forEach(line => {
+            const cols  = parseCSVLine(line);
+            const label = (cols[0] || '').trim().toLowerCase();
+            const prop  = FINANCIAL_LABELS[label];
+            if (!prop) return;
+            fd[prop] = cols.slice(1, 13).map(v => {
+                const n = parseNum(v);
+                return (MARGIN_PROPS.has(prop) && n > 0 && n < 1) ? n * 100 : n;
+            });
+        });
+        Object.values(FINANCIAL_LABELS).forEach(prop => {
+            if (!fd[prop]) {
+                console.warn('[rings] Financial row not found:', prop);
+                fd[prop] = Array(12).fill(0);
+            }
+        });
+        let currentMonthIdx = 0;
+        fd.cumulativeActualIncome.forEach((v, i) => { if (v > 0) currentMonthIdx = i; });
+        fd.currentMonthIdx = currentMonthIdx;
+        const idx = currentMonthIdx;
+        fd.ytdActualIncome = fd.cumulativeActualIncome[idx] || 0;
+        fd.ytdActualMargin = fd.cumulativeActualIncome[idx] > 0
+            ? (fd.cumulativeGrossProfit[idx] / fd.cumulativeActualIncome[idx]) * 100
+            : 0;
+        fd.incomeTarget  = fd.cumulativeBudgetIncome[11] || REV_TARGET;
+        fd.marginFloor   = MGN_FLOOR;
+        fd.marginStretch = MGN_STRETCH;
+        window.fd = fd;
+    }
+
+    function processGoals(csv) {
+        const lines = csv.split('\n');
+        let headerCols = [];
+        const gd = { completed: 0, total: GOALS_TOTAL, statuses: {}, goals: [] };
+        ['Completed','On Track','At Risk','Off Track','Not Started','AI Risk'].forEach(k => gd.statuses[k] = 0);
+        lines.forEach((line, idx) => {
+            if (idx === 0) { headerCols = parseCSVLine(line); return; }
+            if (!line.trim()) return;
+            const cols = parseCSVLine(line);
+            const dept = (cols[0] || '').trim();
+            if (!DEPT_NAMES.includes(dept)) return;
+            let rawStatus = '', reviewDate = '';
+            for (let ci = 8; ci >= 2; ci--) {
+                const v = (cols[ci] || '').trim();
+                if (v) { rawStatus = v; reviewDate = (headerCols[ci] || '').trim(); break; }
+            }
+            if (!rawStatus) rawStatus = 'Not Started';
+            if (rawStatus.includes('Completed'))     { gd.statuses['Completed']++; gd.completed++; }
+            else if (rawStatus.includes('On Track'))   gd.statuses['On Track']++;
+            else if (rawStatus.includes('Off Track'))  gd.statuses['Off Track']++;
+            else if (rawStatus.includes('At Risk'))    gd.statuses['At Risk']++;
+            else if (rawStatus.includes('AI Risk'))    gd.statuses['AI Risk']++;
+            else                                        gd.statuses['Not Started']++;
+            gd.goals.push({ dept, title: (cols[1]||'').trim(), currentStatus: rawStatus, reviewDate, note: (cols[9]||'').trim() });
+        });
+        window.gd = gd;
+    }
+
+    // ── Helpers ──────────────────────────────────────────────────────────────
+    function set(id, txt) { const el = document.getElementById(id); if (el) el.textContent = txt; }
+
+    function showEl(id, show) {
+        const el = document.getElementById(id);
+        if (el) el.style.display = show ? '' : 'none';
+    }
+
+    function setRing(id, circumference, ratio) {
+        const el = document.getElementById(id);
+        if (el) el.style.strokeDashoffset = circumference * (1 - Math.min(1, Math.max(0, ratio)));
+    }
+
+    function setMiniBar(id, ratio, color) {
+        const el = document.getElementById(id);
+        if (!el) return;
+        el.style.width = (Math.min(1, Math.max(0, ratio)) * 100).toFixed(1) + '%';
+        el.style.background = color;
+    }
+
+    function getTopDepts(n) {
+        const byDept = {};
+        (window.gd?.goals || []).forEach(g => {
+            if (!byDept[g.dept]) byDept[g.dept] = { total: 0, completed: 0 };
+            byDept[g.dept].total++;
+            if (g.currentStatus.includes('Completed')) byDept[g.dept].completed++;
+        });
+        return Object.entries(byDept)
+            .filter(([, d]) => d.completed > 0)
+            .sort(([an, a], [bn, b]) => b.completed - a.completed || an.localeCompare(bn))
+            .slice(0, n)
+            .map(([name, d]) => ({ name, completed: d.completed, total: d.total }));
+    }
+
+    function buildSubline(bonus, rev, incTarget, margin, mgnFloor, mgnStretch, comp, glsThresh) {
+        if (bonus.total.earned === 0) {
+            const weeks = Math.max(0, Math.round((FY_END - new Date()) / (7 * 86400000)));
+            return 'NO COMPONENTS TRACKING · ' + weeks + ' WEEKS TO CLOSE GAPS';
+        }
+        if (bonus.income.earned >= 1 && bonus.margin.earned >= 2 && bonus.goals.earned >= 2) {
+            return 'TRACKING TOWARD FULL 5% BY JUN 30';
+        }
+        const parts = [];
+        if (bonus.income.earned < 1) {
+            parts.push(bonus.income.earned > 0 ? 'INCOME TRACKING' : 'INCOME ' + fmtCurrency(incTarget - rev) + ' SHORT');
+        }
+        if (bonus.margin.earned < 2) {
+            parts.push(bonus.margin.earned > 0 ? 'MARGIN TRACKING' : 'MARGIN BELOW FLOOR');
+        }
+        if (bonus.goals.earned < 2) {
+            const need = Math.max(0, glsThresh - comp);
+            parts.push(bonus.goals.earned > 0 ? 'GOALS TRACKING' : 'GOALS ' + need + ' SHORT');
+        }
+        return parts.join(' · ');
+    }
+
+    // ── Render ───────────────────────────────────────────────────────────────
+    function render() {
+        const fd = window.fd || {};
+        const gd = window.gd || {};
+        const rev    = fd.ytdActualIncome || 0;
+        const margin = fd.ytdActualMargin || 0;
+        const comp   = gd.completed || 0;
+
+        const incomeTarget  = fd.incomeTarget  || REV_TARGET;
+        const marginFloor   = fd.marginFloor   || MGN_FLOOR;
+        const marginStretch = fd.marginStretch || MGN_STRETCH;
+
+        const bonus = computeBonus({
+            ytdActualIncome: rev, incomeTarget,
+            ytdMargin: margin, marginFloor, marginStretch,
+            goalsCompleted: comp, goalsThreshold: GOALS_BONUS,
+        });
+        window.bonus = bonus;
+
+        const isFinal  = new Date() >= FY_END;
+        const msLeft   = Math.max(0, FY_END - new Date());
+        const weeksLeft = Math.ceil(msLeft / (7 * 86400000));
+        const inPlay   = (5 - bonus.total.earned).toFixed(1);
+        const earned   = bonus.total.earned.toFixed(1);
+
+        // ── Header
+        if (isFinal) {
+            set('hdr-line1', 'FINAL BONUS: ' + earned + '% OF 5%');
+            set('hdr-line2', '');
+        } else {
+            set('hdr-line1', inPlay + '% STILL IN PLAY · ' + earned + '% EARNED AT PACE');
+            set('hdr-line2', buildSubline(bonus, rev, incomeTarget, margin, marginFloor, marginStretch, comp, GOALS_BONUS));
+        }
+
+        // ── Rings
+        setRing('ring-income', 2262, rev / (incomeTarget || 1));
+        setRing('ring-margin', 1696, bonus.margin.earned / 2.0);
+        setRing('ring-goals',  1131, comp / GOALS_BONUS);
+
+        // ── Center block
+        set('center-overline', isFinal ? 'FINAL' : 'STILL IN PLAY');
+        set('center-number',   inPlay + '%');
+        set('center-sub',      earned + '% earned · ' + inPlay + '% in play');
+
+        // ── Income card
+        set('inc-hero',    fmtCurrency(rev) + ' of ' + fmtCurrency(incomeTarget));
+        set('inc-bonus',   bonus.income.earned.toFixed(1) + '% of 1% · binary');
+        showEl('inc-secured', bonus.income.secured);
+        if (rev >= incomeTarget) {
+            set('inc-context', 'Full-year target hit');
+        } else {
+            set('inc-context', fmtCurrency(incomeTarget - rev) + ' short · binary target');
+        }
+        setMiniBar('inc-bar', rev / (incomeTarget || 1), 'var(--blue)');
+
+        // ── Margin card
+        set('mgn-hero',    'YTD ' + margin.toFixed(1) + '%');
+        set('mgn-bonus',   bonus.margin.earned.toFixed(1) + '% of 2% · sliding');
+        if (margin < marginFloor) {
+            set('mgn-context', 'Below ' + marginFloor.toFixed(1) + '% floor · ' + (marginFloor - margin).toFixed(1) + ' pt to unlock');
+        } else if (margin >= marginStretch) {
+            set('mgn-context', 'At max tier · volatile');
+        } else {
+            set('mgn-context', '+' + (marginStretch - margin).toFixed(1) + ' pt to max (' + marginStretch.toFixed(1) + '%)');
+        }
+        setMiniBar('mgn-bar', bonus.margin.earned / 2.0, 'var(--gold)');
+
+        // ── Goals card
+        set('gls-hero',    comp + ' of ' + GOALS_TOTAL + ' completed');
+        set('gls-bonus',   bonus.goals.earned.toFixed(1) + '% of 2% · binary');
+        showEl('gls-secured', bonus.goals.secured);
+        if (comp >= GOALS_BONUS) {
+            set('gls-context', 'Threshold cleared · ' + comp + ' completed');
+        } else {
+            set('gls-context', (GOALS_BONUS - comp) + ' left to unlock the 2% bonus');
+        }
+        setMiniBar('gls-bar', comp / GOALS_BONUS, 'var(--green)');
+
+        // ── Footer
+        const tagline = isFinal
+            ? 'FY2025–26 CLOSED · FINAL BONUS: ' + earned + '%'
+            : 'CLOSE THREE RINGS · UNLOCK FIVE PERCENT · ' + weeksLeft + ' WEEKS TO THE FINISH LINE';
+        set('footer-tag', tagline);
+
+        const tops   = getTopDepts(2);
+        const medals = ['🥇', '🥈'];
+        set('footer-leaders', tops.map((d, i) => medals[i] + ' ' + d.name + ' (' + d.completed + '/' + d.total + ')').join('  ·  '));
+    }
+
+    // ── Freshness ────────────────────────────────────────────────────────────
+    let lastSuccessAt = null;
+
+    function renderFreshness(state, timestamp) {
+        const el = document.getElementById('updated');
+        if (!el) return;
+        el.className = 'updated ' + state;
+        if (state === 'fresh')      el.textContent = 'Updated ' + timestamp;
+        else if (state === 'stale') el.textContent = 'Updated ' + timestamp + ' · stale';
+        else if (state === 'cached') el.textContent = 'Cached ' + timestamp;
+        else                        el.textContent = 'DATA STALE · check sheet access';
+    }
+
+    function updateFreshness() {
+        if (!lastSuccessAt) { renderFreshness('broken', ''); return; }
+        const age  = Date.now() - lastSuccessAt;
+        const mins = age / 60000;
+        const ts   = new Date(lastSuccessAt).toLocaleString('en-AU', { hour: '2-digit', minute: '2-digit', hour12: true });
+        if      (mins < 20) renderFreshness('fresh',  ts);
+        else if (mins < 45) renderFreshness('stale',  ts);
+        else                renderFreshness('broken', ts);
+    }
+
+    // ── Fetch ────────────────────────────────────────────────────────────────
+    async function fetchData() {
+        try {
+            const [fin, gls] = await Promise.all([
+                fetch(CONFIG.financialSheetUrl).then(r => r.text()),
+                fetch(CONFIG.goalsSheetUrl).then(r => r.text())
+            ]);
+            const finIsHtml = fin.trimStart().startsWith('<!DOCTYPE') || fin.trimStart().startsWith('<html');
+            const glsIsHtml = gls.trimStart().startsWith('<!DOCTYPE') || gls.trimStart().startsWith('<html');
+            if (finIsHtml || glsIsHtml) {
+                console.warn('[rings] Sheet returned HTML — check the sheet is shared publicly');
+            } else {
+                processFinancial(fin);
+                processGoals(gls);
+                const hasFinancial = (window.fd?.monthlyActualIncome || []).some(v => v > 0);
+                const hasGoals     = (window.gd?.goals || []).length > 0;
+                if (hasFinancial && hasGoals) {
+                    lastSuccessAt = Date.now();
+                    localStorage.setItem('xzdash.fin.v1',   JSON.stringify({ csv: fin, at: lastSuccessAt }));
+                    localStorage.setItem('xzdash.goals.v1', JSON.stringify({ csv: gls, at: lastSuccessAt }));
+                } else {
+                    console.warn('[rings] Parse returned no data rows — not marking as fresh');
+                }
+            }
+        } catch (e) {
+            console.error('[rings] Fetch error:', e);
+        }
+        render();
+        updateFreshness();
+    }
+
+    // ── Cache boot ───────────────────────────────────────────────────────────
+    (function bootCache() {
+        try {
+            const finRaw = localStorage.getItem('xzdash.fin.v1');
+            const glsRaw = localStorage.getItem('xzdash.goals.v1');
+            if (!finRaw || !glsRaw) return;
+            const finC = JSON.parse(finRaw);
+            const glsC = JSON.parse(glsRaw);
+            if (Date.now() - finC.at > 86400000 || Date.now() - glsC.at > 86400000) return;
+            processFinancial(finC.csv);
+            processGoals(glsC.csv);
+            render();
+            const ts = new Date(finC.at).toLocaleString('en-AU', { hour: '2-digit', minute: '2-digit', hour12: true });
+            renderFreshness('cached', ts);
+        } catch (_) {}
+    })();
+
+    fetchData();
+    setInterval(fetchData, 900000);
+    setInterval(updateFreshness, 60000);
+</script>
+</body>
+</html>
