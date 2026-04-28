@@ -112,8 +112,6 @@
             fill: none;
             stroke-width: 28;
             stroke-linecap: round;
-            transform-origin: center;
-            transform: rotate(-90deg);
             transition: stroke-dashoffset 1.2s cubic-bezier(0.4, 0, 0.2, 1);
         }
         /* dasharray/dashoffset live as inline style on each element so JS setProperty can drive the transition */
@@ -251,9 +249,9 @@
                 <circle class="ring-track" r="180"/>
 
                 <!-- Live rings — dasharray/dashoffset as inline style so CSS transition can animate them -->
-                <circle id="ring-income" r="360" style="stroke-dasharray:2262;stroke-dashoffset:2262"/>
-                <circle id="ring-margin" r="270" style="stroke-dasharray:1696;stroke-dashoffset:1696"/>
-                <circle id="ring-goals"  r="180" style="stroke-dasharray:1131;stroke-dashoffset:1131"/>
+                <circle id="ring-income" r="360" transform="rotate(-90)" style="stroke-dasharray:2262;stroke-dashoffset:2262"/>
+                <circle id="ring-margin" r="270" transform="rotate(-90)" style="stroke-dasharray:1696;stroke-dashoffset:1696"/>
+                <circle id="ring-goals"  r="180" transform="rotate(-90)" style="stroke-dasharray:1131;stroke-dashoffset:1131"/>
 
                 <!-- Ring labels at 3-o'clock position -->
                 <text x="375" y="-8" fill="var(--blue)"  font-family="'Barlow Condensed',sans-serif" font-size="15" font-weight="700" letter-spacing="3">INCOME</text>
