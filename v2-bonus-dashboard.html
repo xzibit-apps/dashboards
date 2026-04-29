@@ -407,24 +407,33 @@
     }
 
     // ── Per-column status helpers ────────────────────────────────────────────
-    function revenueStatus(actual, target, wElapsed) {
-        if (actual >= target) return { label: 'SECURED',   tone: 'green' };
-        const proj = actual * weeksTotal / wElapsed;
-        if (proj >= target)        return { label: 'ON TRACK', tone: 'green' };
-        if (proj >= target * 0.95) return { label: 'AT RISK',  tone: 'gold'  };
+    // revenueStatus: uses signed pipeline (Realistic Pipeline Value) for a forward-looking view
+    function revenueStatus(actual, target, pipelineRemaining) {
+        if (actual >= target) return { label: 'SECURED', tone: 'green' };
+        const inTheBag = actual + (pipelineRemaining || 0);
+        if (inTheBag >= target)        return { label: 'ON TRACK', tone: 'green' };
+        if (inTheBag >= target * 0.95) return { label: 'AT RISK',  tone: 'gold'  };
         return { label: 'OFF TRACK', tone: 'red' };
     }
     function marginStatus(ytdMargin) {
         if (ytdMargin >= 33.7) return { label: 'STRETCH HIT', tone: 'green' };
-        if (ytdMargin >= 32.0) return { label: 'ON TRACK',    tone: 'green' };
-        if (ytdMargin >= 31.7) return { label: 'AT RISK',     tone: 'gold'  };
+        if (ytdMargin >= 31.7) return { label: 'ON TRACK',    tone: 'green' };
+        if (ytdMargin >= 31.5) return { label: 'AT RISK',     tone: 'gold'  };
         return { label: 'OFF TRACK', tone: 'red' };
     }
-    function goalsStatus(completed, wElapsed) {
-        if (completed >= GOALS_BONUS) return { label: 'SECURED',   tone: 'green' };
-        const proj = completed * weeksTotal / wElapsed;
-        if (proj >= GOALS_BONUS)      return { label: 'ON TRACK', tone: 'green' };
-        if (proj >= GOALS_BONUS - 2)  return { label: 'AT RISK',  tone: 'gold'  };
+    // goalsStatus: uses effectiveCompletion (sum of %complete/100) when % Complete column is present;
+    // falls back to pace-projection when effectiveCompletion is null (column absent from sheet)
+    function goalsStatus(completed, effectiveCompletion) {
+        if (completed >= GOALS_BONUS) return { label: 'SECURED', tone: 'green' };
+        if (effectiveCompletion != null && effectiveCompletion >= GOALS_BONUS)
+            return { label: 'ON TRACK', tone: 'green' };
+        if (effectiveCompletion != null && effectiveCompletion >= GOALS_BONUS - 2)
+            return { label: 'AT RISK',  tone: 'gold'  };
+        // Fallback: pace-projection (used when % Complete column is absent)
+        const weeksElapsed = Math.max(1, (Date.now() - FY_START) / (7 * 24 * 60 * 60 * 1000));
+        const projected = completed * weeksTotal / weeksElapsed;
+        if (projected >= GOALS_BONUS)     return { label: 'ON TRACK', tone: 'green' };
+        if (projected >= GOALS_BONUS - 2) return { label: 'AT RISK',  tone: 'gold'  };
         return { label: 'OFF TRACK', tone: 'red' };
     }
     const TONE_STYLES = {
@@ -453,6 +462,10 @@
         'actual gp margin':             'monthlyActualMargin',
         'cumulative gross profit':      'cumulativeGrossProfit',
     };
+    // Optional rows — parsed but not warn/zeroed when absent
+    const FINANCIAL_LABELS_OPTIONAL = {
+        'realistic pipeline value': 'realisticPipeline',
+    };
     // These rows may be stored as decimals (0.317) and need ×100 normalisation
     const MARGIN_PROPS = new Set(['cumulativeBudgetMargin','cumulativeTargetMargin','monthlyActualMargin']);
 
@@ -463,7 +476,7 @@
         lines.forEach(line => {
             const cols  = parseCSVLine(line);
             const label = (cols[0] || '').trim().toLowerCase();
-            const prop  = FINANCIAL_LABELS[label];
+            const prop  = FINANCIAL_LABELS[label] || FINANCIAL_LABELS_OPTIONAL[label];
             if (!prop) return;
             fd[prop] = cols.slice(1, 13).map(v => {
                 const n = parseNum(v);
@@ -494,18 +507,36 @@
         fd.marginFloor   = MGN_FLOOR;    // structural floor; Config tab will supply this in a later PR
         fd.marginStretch = MGN_STRETCH;  // structural stretch; Config tab will supply this in a later PR
 
+        // pipelineRemaining: sum of Realistic Pipeline Value for months after current (optional row)
+        if (fd.realisticPipeline) {
+            fd.pipelineRemaining = fd.realisticPipeline
+                .slice(currentMonthIdx + 1)
+                .reduce((a, v) => a + (v || 0), 0);
+        } else {
+            fd.pipelineRemaining = 0;
+        }
+
         window.fd = fd;
     }
 
     function processGoals(csv) {
         const lines = csv.split('\n');
         let headerCols = [];
-        const gd = { completed: 0, total: GOALS_TOTAL, statuses: {}, goals: [] };
+        const gd = { completed: 0, total: GOALS_TOTAL, statuses: {}, goals: [], effectiveCompletion: null };
         const statusKeys = ['Completed','On Track','At Risk','Off Track','Not Started','AI Risk'];
         statusKeys.forEach(k => gd.statuses[k] = 0);
 
+        // Locate the optional '% Complete' column by scanning the header row
+        let pctCompleteIdx = -1;
+
         lines.forEach((line, idx) => {
-            if (idx === 0) { headerCols = parseCSVLine(line); return; }
+            if (idx === 0) {
+                headerCols = parseCSVLine(line);
+                pctCompleteIdx = headerCols.findIndex(h => h.trim().toLowerCase() === '% complete');
+                if (pctCompleteIdx === -1)
+                    console.warn('[goals] "% Complete" column not found — effectiveCompletion will be null');
+                return;
+            }
             if (!line.trim()) return;
             const cols = parseCSVLine(line);
             const dept = (cols[0] || '').trim();
@@ -519,8 +550,11 @@
             }
             if (!rawStatus) rawStatus = 'Not Started';
 
-            const title = (cols[1] || '').trim();
-            const note  = (cols[9] || '').trim();
+            const title       = (cols[1] || '').trim();
+            const note        = (cols[9] || '').trim();
+            const percentComplete = pctCompleteIdx !== -1
+                ? Math.min(100, Math.max(0, parseNum(cols[pctCompleteIdx])))
+                : (rawStatus.includes('Completed') ? 100 : 0);
 
             if (rawStatus.includes('Completed'))       { gd.statuses['Completed']++;   gd.completed++; }
             else if (rawStatus.includes('On Track'))     gd.statuses['On Track']++;
@@ -529,8 +563,14 @@
             else if (rawStatus.includes('AI Risk'))      gd.statuses['AI Risk']++;
             else                                          gd.statuses['Not Started']++;
 
-            gd.goals.push({ dept, title, currentStatus: rawStatus, reviewDate, note });
+            gd.goals.push({ dept, title, currentStatus: rawStatus, reviewDate, note, percentComplete });
         });
+
+        // effectiveCompletion: sum(percentComplete/100) — only populated when % Complete column exists
+        if (pctCompleteIdx !== -1) {
+            gd.effectiveCompletion = gd.goals.reduce((sum, g) => sum + g.percentComplete / 100, 0);
+        }
+
         window.gd = gd;
     }
 
@@ -571,14 +611,18 @@
         set('inc-tracking', bonus.income.earned.toFixed(1) + '%');
         const incSecuredEl = document.getElementById('inc-secured');
         if (incSecuredEl) incSecuredEl.className = 'secured-pill' + (bonus.income.secured ? '' : ' hidden');
-        const revM = (rev / 1e6).toFixed(1);
-        const tgtM = (incomeTarget / 1e6).toFixed(2);
+        const revM      = (rev / 1e6).toFixed(1);
+        const tgtM      = (incomeTarget / 1e6).toFixed(2);
+        const pipelineRemaining = fd.pipelineRemaining || 0;
         set('inc-story1', '$' + revM + 'M of $' + tgtM + 'M');
         if (rev >= incomeTarget) {
             set('inc-story2', 'Full-year target hit');
         } else {
             const shortM = ((incomeTarget - rev) / 1e6).toFixed(1);
-            set('inc-story2', '$' + shortM + 'M short · binary target');
+            const pipelineCaveat = pipelineRemaining > 0
+                ? ' · $' + (pipelineRemaining / 1e6).toFixed(1) + 'M pipeline'
+                : '';
+            set('inc-story2', '$' + shortM + 'M short · binary target' + pipelineCaveat);
         }
 
         // ── MARGIN COLUMN
@@ -613,10 +657,9 @@
         set('scheme-goals',  'DEPT GOALS · ' + GOALS_BONUS + ' of ' + GOALS_TOTAL + ' Completed = 2% · binary · EOFY review');
 
         // ── STATUS PILLS
-        const weeksElapsed = Math.max(1, (Date.now() - FY_START) / (7 * 24 * 60 * 60 * 1000));
-        renderStatusPill('inc-status-pill', revenueStatus(rev, incomeTarget, weeksElapsed));
+        renderStatusPill('inc-status-pill', revenueStatus(rev, incomeTarget, pipelineRemaining));
         renderStatusPill('mgn-status-pill', marginStatus(margin));
-        renderStatusPill('gls-status-pill', goalsStatus(comp, weeksElapsed));
+        renderStatusPill('gls-status-pill', goalsStatus(comp, gd.effectiveCompletion ?? null));
 
         renderCharts(stats, comp);
     }

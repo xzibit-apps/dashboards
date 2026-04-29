@@ -48,14 +48,16 @@ The bonus dashboard parses the **Financial tab** by row label (column A), not by
 | `Total Actual Income (Fathom)` | `fd.monthlyActualIncome` | Monthly actuals for the line chart |
 | `Actual GP Margin` | `fd.monthlyActualMargin` | Monthly margin rate for the chart; may be stored as decimal (0.317 → 31.7%) |
 | `Cumulative Gross Profit` | `fd.cumulativeGrossProfit` | Dollar amount; used to derive YTD margin |
+| `Realistic Pipeline Value` | `fd.realisticPipeline` | **Optional.** Pipeline by month (future months only, past = 0); owned by Sales |
 
 Derived values available on `window.fd` after parse:
 - `fd.ytdActualIncome` — cumulative income to current month (used as the headline revenue figure)
 - `fd.ytdActualMargin` — `cumulativeGrossProfit[idx] / cumulativeActualIncome[idx] × 100` (YTD %, used as headline margin; more stable than monthly rate)
 - `fd.incomeTarget` — `cumulativeBudgetIncome[11]` (June cumulative = full-year target)
 - `fd.currentMonthIdx` — index of rightmost non-zero month in `cumulativeActualIncome`
+- `fd.pipelineRemaining` — sum of `fd.realisticPipeline[currentMonthIdx+1 .. 11]`; 0 when row absent
 
-If any row label is not found, the code falls back to the hardcoded constants and logs a `console.warn`.
+If a required row label is not found, the code falls back to the hardcoded constants and logs a `console.warn`. The `Realistic Pipeline Value` row is optional — no warning is fired if it is absent.
 
 ### Goals tab expected shape
 
@@ -67,10 +69,16 @@ The goals tab (gid `368453036`) is parsed per row. Expected column layout:
 | 1 | Goal title |
 | 2–8 | Review status columns (one per review cycle, e.g. "March 2026", "April 2026") |
 | 9 | Notes from last meeting (exposed as `.note` on each goal object; rendered in a later PR) |
+| (variable) | `% Complete` — found by header label (case-insensitive), not index; 0–100 per goal; owned by dept leads |
 
 The code scans columns 2–8 **right-to-left** and takes the first non-empty cell as `currentStatus`. This means the April 2026 review always wins over March 2026 if both are populated. The header row (row 0) provides the `reviewDate` label for each column.
 
+`% Complete` is located by scanning the header row for the label (case-insensitive). If absent, `gd.effectiveCompletion` is set to `null` and a `console.warn` is logged; the Goals status pill falls back to pace-projection.
+
 All three dashboards expose `window.gd.goals` (array of goal objects) and `window.bonus` (computeBonus output) in the browser console for dev inspection.
+
+Derived value on `window.gd`:
+- `gd.effectiveCompletion` — `sum(goal.percentComplete / 100)` across all goals; a completion-equivalent count (e.g. 7 fully-Completed + 13 at 60% = 14.8); `null` when `% Complete` column is absent
 
 ## Local preview
 
