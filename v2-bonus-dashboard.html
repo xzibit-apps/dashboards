@@ -116,6 +116,11 @@
             padding-bottom: 14px;
             border-bottom: 2px solid var(--border);
         }
+        .col-header-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
         .col-label {
             font-family: 'Barlow Condensed', sans-serif;
             font-size: 15px;
@@ -123,6 +128,19 @@
             letter-spacing: 4px;
             text-transform: uppercase;
             color: var(--dim);
+        }
+        .status-pill {
+            height: 22px;
+            padding: 0 12px;
+            border-radius: 4px;
+            font-family: 'Barlow Condensed', sans-serif;
+            font-size: 13px;
+            font-weight: 800;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            display: inline-flex;
+            align-items: center;
+            white-space: nowrap;
         }
 
         /* Tracking number block */
@@ -257,10 +275,13 @@
     <!-- 3 COLUMNS -->
     <div class="main-grid">
 
-        <!-- COLUMN 1: INCOME -->
+        <!-- COLUMN 1: REVENUE -->
         <div class="col">
             <div class="col-header">
-                <div class="col-label">Income (1%)</div>
+                <div class="col-header-row">
+                    <div class="col-label">Revenue (1%)</div>
+                    <div class="status-pill" id="inc-status-pill"></div>
+                </div>
             </div>
             <div class="tracking-group">
                 <div class="tracking-label">Tracking</div>
@@ -279,7 +300,10 @@
         <!-- COLUMN 2: GROSS MARGIN -->
         <div class="col">
             <div class="col-header">
-                <div class="col-label">Gross Margin (2%)</div>
+                <div class="col-header-row">
+                    <div class="col-label">Gross Margin (2%)</div>
+                    <div class="status-pill" id="mgn-status-pill"></div>
+                </div>
             </div>
             <div class="tracking-group">
                 <div class="tracking-label">Tracking</div>
@@ -297,7 +321,10 @@
         <!-- COLUMN 3: DEPT GOALS -->
         <div class="col">
             <div class="col-header">
-                <div class="col-label">Dept Goals (2%)</div>
+                <div class="col-header-row">
+                    <div class="col-label">Dept Goals (2%)</div>
+                    <div class="status-pill" id="gls-status-pill"></div>
+                </div>
             </div>
             <div class="tracking-group">
                 <div class="tracking-label">Tracking</div>
@@ -318,7 +345,7 @@
 
     <!-- SCHEME STRIP -->
     <div class="scheme-strip">
-        <div class="scheme-cell" id="scheme-income">INCOME · $10.34M full-year · binary · volatile, can regress</div>
+        <div class="scheme-cell" id="scheme-income">REVENUE · $10.34M full-year · binary · volatile, can regress</div>
         <div class="scheme-cell" id="scheme-margin">GROSS MARGIN · 31.7% = 1% / 33.7% = 2% · sliding · volatile</div>
         <div class="scheme-cell" id="scheme-goals">DEPT GOALS · 14 of 27 Completed = 2% · binary · EOFY review</div>
     </div>
@@ -340,7 +367,9 @@
     const GOALS_TOTAL = 27;       // FALLBACK — overridden by sheet parse
     const GOALS_BONUS = 14;       // FALLBACK — overridden by sheet parse
 
-    const FY_END = new Date('2026-06-30'); // update each FY
+    const FY_START   = new Date('2025-07-01'); // update each FY
+    const FY_END     = new Date('2026-06-30'); // update each FY
+    const weeksTotal = Math.round((FY_END - FY_START) / (7 * 24 * 60 * 60 * 1000)); // ~52
 
     let revenueChart, marginChart, goalsChart;
 
@@ -375,6 +404,42 @@
             goals:  { earned: goalsBonus,   max: 2.0, secured: goalsSecured },
             total:  { earned: incomeBonus + marginBonus + goalsBonus, max: 5.0 },
         };
+    }
+
+    // ── Per-column status helpers ────────────────────────────────────────────
+    function revenueStatus(actual, target, wElapsed) {
+        if (actual >= target) return { label: 'SECURED',   tone: 'green' };
+        const proj = actual * weeksTotal / wElapsed;
+        if (proj >= target)        return { label: 'ON TRACK', tone: 'green' };
+        if (proj >= target * 0.95) return { label: 'AT RISK',  tone: 'gold'  };
+        return { label: 'OFF TRACK', tone: 'red' };
+    }
+    function marginStatus(ytdMargin) {
+        if (ytdMargin >= 33.7) return { label: 'STRETCH HIT', tone: 'green' };
+        if (ytdMargin >= 32.0) return { label: 'ON TRACK',    tone: 'green' };
+        if (ytdMargin >= 31.7) return { label: 'AT RISK',     tone: 'gold'  };
+        return { label: 'OFF TRACK', tone: 'red' };
+    }
+    function goalsStatus(completed, wElapsed) {
+        if (completed >= GOALS_BONUS) return { label: 'SECURED',   tone: 'green' };
+        const proj = completed * weeksTotal / wElapsed;
+        if (proj >= GOALS_BONUS)      return { label: 'ON TRACK', tone: 'green' };
+        if (proj >= GOALS_BONUS - 2)  return { label: 'AT RISK',  tone: 'gold'  };
+        return { label: 'OFF TRACK', tone: 'red' };
+    }
+    const TONE_STYLES = {
+        green: { bg: 'rgba(0,232,135,0.15)',  color: '#00E887', border: 'rgba(0,232,135,0.3)'  },
+        gold:  { bg: 'rgba(255,209,58,0.15)', color: '#FFD13A', border: 'rgba(255,209,58,0.3)' },
+        red:   { bg: 'rgba(255,68,85,0.15)',  color: '#FF4455', border: 'rgba(255,68,85,0.3)'  },
+    };
+    function renderStatusPill(id, status) {
+        const el = document.getElementById(id);
+        if (!el) return;
+        const s = TONE_STYLES[status.tone] || TONE_STYLES.red;
+        el.textContent = status.label;
+        el.style.background = s.bg;
+        el.style.color       = s.color;
+        el.style.border      = '1px solid ' + s.border;
     }
 
     // Map normalised row label → fd property name.
@@ -543,9 +608,15 @@
 
         // ── SCHEME STRIP (derived from parsed targets, updated each FY)
         const incFmt = (incomeTarget / 1e6).toFixed(2).replace(/0+$/, '').replace(/\.$/, '');
-        set('scheme-income', 'INCOME · $' + incFmt + 'M full-year · binary · volatile, can regress');
+        set('scheme-income', 'REVENUE · $' + incFmt + 'M full-year · binary · volatile, can regress');
         set('scheme-margin', 'GROSS MARGIN · ' + marginFloor.toFixed(1) + '% = 1% / ' + marginStretch.toFixed(1) + '% = 2% · sliding · volatile');
         set('scheme-goals',  'DEPT GOALS · ' + GOALS_BONUS + ' of ' + GOALS_TOTAL + ' Completed = 2% · binary · EOFY review');
+
+        // ── STATUS PILLS
+        const weeksElapsed = Math.max(1, (Date.now() - FY_START) / (7 * 24 * 60 * 60 * 1000));
+        renderStatusPill('inc-status-pill', revenueStatus(rev, incomeTarget, weeksElapsed));
+        renderStatusPill('mgn-status-pill', marginStatus(margin));
+        renderStatusPill('gls-status-pill', goalsStatus(comp, weeksElapsed));
 
         renderCharts(stats, comp);
     }
@@ -567,10 +638,10 @@
         if (bonus.income.earned >= bonus.income.max) {
             // at max — omit from tail
         } else if (bonus.income.earned > 0) {
-            parts.push('INCOME TRACKING');
+            parts.push('REVENUE TRACKING');
         } else {
             const shortM = Math.max(0, (incTarget - rev) / 1e6).toFixed(1);
-            parts.push('INCOME $' + shortM + 'M SHORT');
+            parts.push('REVENUE $' + shortM + 'M SHORT');
         }
         if (bonus.margin.earned >= bonus.margin.max) {
             // at max — omit
@@ -632,11 +703,18 @@
         const currentMonthIdx = fd.currentMonthIdx !== undefined ? fd.currentMonthIdx : 0;
         const sliceLen        = currentMonthIdx + 1;
 
-        // ── REVENUE: cumulative budget vs cumulative actual ──────────────────
+        // ── REVENUE: cumulative budget vs cumulative actual + forecast ────────
         const cumBudget = fd.cumulativeBudgetIncome || Array(12).fill(0);
         const cumActual = fd.cumulativeActualIncome || Array(12).fill(0);
         // Actual plotted only through currentMonthIdx; nulls beyond so line stops cleanly
         const cumActualLine = MONTH_LABELS.map((_, i) => i < sliceLen ? (cumActual[i] || 0) : null);
+        // Forecast: starts at actual endpoint, follows budget pace forward
+        const revForecastArr = new Array(12).fill(null);
+        revForecastArr[currentMonthIdx] = cumActual[currentMonthIdx] || 0;
+        for (let m = currentMonthIdx + 1; m < 12; m++) {
+            const delta = (cumBudget[m] || 0) - (cumBudget[m - 1] || 0);
+            revForecastArr[m] = revForecastArr[m - 1] + delta;
+        }
 
         if (revenueChart) revenueChart.destroy();
         revenueChart = new Chart(document.getElementById('revenueChart'), {
@@ -668,6 +746,18 @@
                         pointBorderColor: '#05080f',
                         pointBorderWidth: 2,
                         order: 1
+                    },
+                    {
+                        label: 'Forecast (budget pace)',
+                        data: revForecastArr,
+                        borderColor: '#00CFFF',
+                        borderWidth: 2.5,
+                        borderDash: [8, 6],
+                        pointRadius: 0,
+                        fill: false,
+                        tension: 0,
+                        spanGaps: false,
+                        order: 0
                     }
                 ]
             },
@@ -695,7 +785,7 @@
             }
         });
 
-        // ── MARGIN: cumulative budget / target (dashed gold) / actual ────────
+        // ── MARGIN: cumulative budget / target (dotted gold) / actual + forecast
         const normalize    = arr => arr.map(v => (v > 0 && v < 1) ? v * 100 : v);
         const budgMgn      = normalize(fd.cumulativeBudgetMargin || Array(12).fill(0));
         const tgtMgn       = normalize(fd.cumulativeTargetMargin  || Array(12).fill(0));
@@ -709,6 +799,13 @@
             const gp  = cumGP[i]  || 0;
             return inc > 0 ? (gp / inc) * 100 : 0;
         });
+        // Margin forecast: starts at actual endpoint, follows budget margin pace forward
+        const mgnForecastArr = new Array(12).fill(null);
+        mgnForecastArr[currentMonthIdx] = cumActualMgn[currentMonthIdx] || 0;
+        for (let m = currentMonthIdx + 1; m < 12; m++) {
+            const delta = (budgMgn[m] || 0) - (budgMgn[m - 1] || 0);
+            mgnForecastArr[m] = mgnForecastArr[m - 1] + delta;
+        }
 
         if (marginChart) marginChart.destroy();
         marginChart = new Chart(document.getElementById('marginChart'), {
@@ -727,11 +824,11 @@
                         order: 3
                     },
                     {
-                        label: 'Target',
+                        label: 'Target (stretch)',
                         data: tgtMgn,
                         borderColor: 'rgba(255,209,58,0.7)',
                         borderWidth: 1.5,
-                        borderDash: [6, 4],
+                        borderDash: [2, 3],
                         pointRadius: 0,
                         fill: false,
                         tension: 0,
@@ -751,6 +848,18 @@
                         pointBorderColor: '#05080f',
                         pointBorderWidth: 2,
                         order: 1
+                    },
+                    {
+                        label: 'Forecast (budget pace)',
+                        data: mgnForecastArr,
+                        borderColor: '#00CFFF',
+                        borderWidth: 2.5,
+                        borderDash: [8, 6],
+                        pointRadius: 0,
+                        fill: false,
+                        tension: 0,
+                        spanGaps: false,
+                        order: 0
                     }
                 ]
             },
