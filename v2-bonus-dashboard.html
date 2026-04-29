@@ -421,19 +421,14 @@
         if (ytdMargin >= 31.5) return { label: 'AT RISK',     tone: 'gold'  };
         return { label: 'OFF TRACK', tone: 'red' };
     }
-    // goalsStatus: uses effectiveCompletion (sum of %complete/100) when % Complete column is present;
-    // falls back to pace-projection when effectiveCompletion is null (column absent from sheet)
-    function goalsStatus(completed, effectiveCompletion) {
-        if (completed >= GOALS_BONUS) return { label: 'SECURED', tone: 'green' };
-        if (effectiveCompletion != null && effectiveCompletion >= GOALS_BONUS)
-            return { label: 'ON TRACK', tone: 'green' };
-        if (effectiveCompletion != null && effectiveCompletion >= GOALS_BONUS - 2)
-            return { label: 'AT RISK',  tone: 'gold'  };
-        // Fallback: pace-projection (used when % Complete column is absent)
-        const weeksElapsed = Math.max(1, (Date.now() - FY_START) / (7 * 24 * 60 * 60 * 1000));
-        const projected = completed * weeksTotal / weeksElapsed;
-        if (projected >= GOALS_BONUS)     return { label: 'ON TRACK', tone: 'green' };
-        if (projected >= GOALS_BONUS - 2) return { label: 'AT RISK',  tone: 'gold'  };
+    // goalsStatus: Completed = done, On Track = expected done by EOY, At Risk = may slip
+    function goalsStatus(statuses) {
+        const completed = statuses['Completed'] || 0;
+        const onTrack   = statuses['On Track']  || 0;
+        const atRisk    = statuses['At Risk']   || 0;
+        if (completed >= GOALS_BONUS)                    return { label: 'SECURED',  tone: 'green' };
+        if (completed + onTrack >= GOALS_BONUS)          return { label: 'ON TRACK', tone: 'green' };
+        if (completed + onTrack + atRisk >= GOALS_BONUS) return { label: 'AT RISK',  tone: 'gold'  };
         return { label: 'OFF TRACK', tone: 'red' };
     }
     const TONE_STYLES = {
@@ -522,21 +517,12 @@
     function processGoals(csv) {
         const lines = csv.split('\n');
         let headerCols = [];
-        const gd = { completed: 0, total: GOALS_TOTAL, statuses: {}, goals: [], effectiveCompletion: null };
+        const gd = { completed: 0, total: GOALS_TOTAL, statuses: {}, goals: [] };
         const statusKeys = ['Completed','On Track','At Risk','Off Track','Not Started','AI Risk'];
         statusKeys.forEach(k => gd.statuses[k] = 0);
 
-        // Locate the optional '% Complete' column by scanning the header row
-        let pctCompleteIdx = -1;
-
         lines.forEach((line, idx) => {
-            if (idx === 0) {
-                headerCols = parseCSVLine(line);
-                pctCompleteIdx = headerCols.findIndex(h => h.trim().toLowerCase() === '% complete');
-                if (pctCompleteIdx === -1)
-                    console.warn('[goals] "% Complete" column not found — effectiveCompletion will be null');
-                return;
-            }
+            if (idx === 0) { headerCols = parseCSVLine(line); return; }
             if (!line.trim()) return;
             const cols = parseCSVLine(line);
             const dept = (cols[0] || '').trim();
@@ -550,11 +536,8 @@
             }
             if (!rawStatus) rawStatus = 'Not Started';
 
-            const title       = (cols[1] || '').trim();
-            const note        = (cols[9] || '').trim();
-            const percentComplete = pctCompleteIdx !== -1
-                ? Math.min(100, Math.max(0, parseNum(cols[pctCompleteIdx])))
-                : (rawStatus.includes('Completed') ? 100 : 0);
+            const title = (cols[1] || '').trim();
+            const note  = (cols[9] || '').trim();
 
             if (rawStatus.includes('Completed'))       { gd.statuses['Completed']++;   gd.completed++; }
             else if (rawStatus.includes('On Track'))     gd.statuses['On Track']++;
@@ -563,13 +546,8 @@
             else if (rawStatus.includes('AI Risk'))      gd.statuses['AI Risk']++;
             else                                          gd.statuses['Not Started']++;
 
-            gd.goals.push({ dept, title, currentStatus: rawStatus, reviewDate, note, percentComplete });
+            gd.goals.push({ dept, title, currentStatus: rawStatus, reviewDate, note });
         });
-
-        // effectiveCompletion: sum(percentComplete/100) — only populated when % Complete column exists
-        if (pctCompleteIdx !== -1) {
-            gd.effectiveCompletion = gd.goals.reduce((sum, g) => sum + g.percentComplete / 100, 0);
-        }
 
         window.gd = gd;
     }
@@ -643,8 +621,12 @@
         const glsSecuredEl = document.getElementById('gls-secured');
         if (glsSecuredEl) glsSecuredEl.className = 'secured-pill' + (bonus.goals.secured ? '' : ' hidden');
         set('gls-story1', comp + ' of ' + GOALS_TOTAL + ' completed');
-        if (comp >= GOALS_BONUS) {
-            set('gls-story2', 'Threshold cleared · ' + comp + ' completed');
+        const glsStatus = goalsStatus(stats);
+        if (glsStatus.label === 'SECURED') {
+            set('gls-story2', 'Threshold cleared · ' + comp + ' completed · cannot regress');
+        } else if (glsStatus.label === 'ON TRACK') {
+            const onTrackCount = stats['On Track'] || 0;
+            set('gls-story2', (GOALS_BONUS - comp) + ' short of threshold · ' + comp + ' done + ' + onTrackCount + ' on track');
         } else {
             const need = GOALS_BONUS - comp;
             set('gls-story2', need + ' short of ' + GOALS_BONUS + '-goal threshold');
@@ -659,7 +641,7 @@
         // ── STATUS PILLS
         renderStatusPill('inc-status-pill', revenueStatus(rev, incomeTarget, pipelineRemaining));
         renderStatusPill('mgn-status-pill', marginStatus(margin));
-        renderStatusPill('gls-status-pill', goalsStatus(comp, gd.effectiveCompletion ?? null));
+        renderStatusPill('gls-status-pill', glsStatus);
 
         renderCharts(stats, comp);
     }
