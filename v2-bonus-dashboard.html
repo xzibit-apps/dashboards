@@ -406,25 +406,24 @@
         };
     }
 
-    // ── Per-column status helpers ────────────────────────────────────────────
-    function revenueStatus(actual, target, wElapsed) {
+    // ── Per-column status helpers (forward-looking) ──────────────────────────
+    function revenueStatus(actual, target, bookedForward) {
         if (actual >= target) return { label: 'SECURED',   tone: 'green' };
-        const proj = actual * weeksTotal / wElapsed;
-        if (proj >= target)        return { label: 'ON TRACK', tone: 'green' };
-        if (proj >= target * 0.95) return { label: 'AT RISK',  tone: 'gold'  };
+        const inTheBag = actual + bookedForward;
+        if (inTheBag >= target)        return { label: 'ON TRACK', tone: 'green' };
+        if (inTheBag >= target * 0.95) return { label: 'AT RISK',  tone: 'gold'  };
         return { label: 'OFF TRACK', tone: 'red' };
     }
     function marginStatus(ytdMargin) {
         if (ytdMargin >= 33.7) return { label: 'STRETCH HIT', tone: 'green' };
-        if (ytdMargin >= 32.0) return { label: 'ON TRACK',    tone: 'green' };
-        if (ytdMargin >= 31.7) return { label: 'AT RISK',     tone: 'gold'  };
+        if (ytdMargin >= 31.7) return { label: 'ON TRACK',    tone: 'green' };
+        if (ytdMargin >= 31.5) return { label: 'AT RISK',     tone: 'gold'  };
         return { label: 'OFF TRACK', tone: 'red' };
     }
-    function goalsStatus(completed, wElapsed) {
-        if (completed >= GOALS_BONUS) return { label: 'SECURED',   tone: 'green' };
-        const proj = completed * weeksTotal / wElapsed;
-        if (proj >= GOALS_BONUS)      return { label: 'ON TRACK', tone: 'green' };
-        if (proj >= GOALS_BONUS - 2)  return { label: 'AT RISK',  tone: 'gold'  };
+    function goalsStatus(completedCount, effectiveCompletion) {
+        if (completedCount >= GOALS_BONUS)      return { label: 'SECURED',   tone: 'green' };
+        if (effectiveCompletion >= GOALS_BONUS) return { label: 'ON TRACK',  tone: 'green' };
+        if (effectiveCompletion >= GOALS_BONUS - 2) return { label: 'AT RISK', tone: 'gold' };
         return { label: 'OFF TRACK', tone: 'red' };
     }
     const TONE_STYLES = {
@@ -452,6 +451,7 @@
         'total actual income (fathom)': 'monthlyActualIncome',
         'actual gp margin':             'monthlyActualMargin',
         'cumulative gross profit':      'cumulativeGrossProfit',
+        'booked forward':               'bookedForward',
     };
     // These rows may be stored as decimals (0.317) and need ×100 normalisation
     const MARGIN_PROPS = new Set(['cumulativeBudgetMargin','cumulativeTargetMargin','monthlyActualMargin']);
@@ -493,6 +493,8 @@
         fd.incomeTarget  = fd.cumulativeBudgetIncome[11] || REV_TARGET;
         fd.marginFloor   = MGN_FLOOR;    // structural floor; Config tab will supply this in a later PR
         fd.marginStretch = MGN_STRETCH;  // structural stretch; Config tab will supply this in a later PR
+        // Booked Forward: signed-not-yet-billed revenue for months after currentMonthIdx
+        fd.bookedForwardRemaining = (fd.bookedForward || []).slice(currentMonthIdx + 1).reduce((a, v) => a + v, 0);
 
         window.fd = fd;
     }
@@ -500,12 +502,20 @@
     function processGoals(csv) {
         const lines = csv.split('\n');
         let headerCols = [];
-        const gd = { completed: 0, total: GOALS_TOTAL, statuses: {}, goals: [] };
+        let pctCompleteIdx = -1;
+        const gd = { completed: 0, total: GOALS_TOTAL, statuses: {}, goals: [], effectiveCompletion: 0 };
         const statusKeys = ['Completed','On Track','At Risk','Off Track','Not Started','AI Risk'];
         statusKeys.forEach(k => gd.statuses[k] = 0);
 
         lines.forEach((line, idx) => {
-            if (idx === 0) { headerCols = parseCSVLine(line); return; }
+            if (idx === 0) {
+                headerCols = parseCSVLine(line);
+                pctCompleteIdx = headerCols.findIndex(h => h.trim().toLowerCase() === '% complete');
+                if (pctCompleteIdx === -1) {
+                    console.warn('[bonus] "% Complete" column not found in goals tab — goals status uses completed count only');
+                }
+                return;
+            }
             if (!line.trim()) return;
             const cols = parseCSVLine(line);
             const dept = (cols[0] || '').trim();
@@ -519,6 +529,11 @@
             }
             if (!rawStatus) rawStatus = 'Not Started';
 
+            // % Complete: read from column if present; fallback treats Completed=100%, others=0%
+            const percentComplete = pctCompleteIdx >= 0
+                ? Math.min(100, Math.max(0, parseNum(cols[pctCompleteIdx] || '') || 0))
+                : (rawStatus.includes('Completed') ? 100 : 0);
+
             const title = (cols[1] || '').trim();
             const note  = (cols[9] || '').trim();
 
@@ -529,8 +544,10 @@
             else if (rawStatus.includes('AI Risk'))      gd.statuses['AI Risk']++;
             else                                          gd.statuses['Not Started']++;
 
-            gd.goals.push({ dept, title, currentStatus: rawStatus, reviewDate, note });
+            gd.goals.push({ dept, title, currentStatus: rawStatus, reviewDate, note, percentComplete });
         });
+        // effectiveCompletion: sum of (percentComplete / 100) — completion-equivalent count
+        gd.effectiveCompletion = gd.goals.reduce((sum, g) => sum + (g.percentComplete / 100), 0);
         window.gd = gd;
     }
 
@@ -567,7 +584,9 @@
         set('banner-headline', prefix + ': ' + totalPct + '% OF 5%');
         set('banner-tail', isFinal ? '' : buildBannerTail(bonus, rev, incomeTarget, margin, marginFloor, marginStretch, comp, GOALS_BONUS));
 
-        // ── INCOME COLUMN
+        // ── REVENUE COLUMN
+        const bookedFwd     = fd.bookedForwardRemaining || 0;
+        const effectiveComp = gd.effectiveCompletion    || comp;
         set('inc-tracking', bonus.income.earned.toFixed(1) + '%');
         const incSecuredEl = document.getElementById('inc-secured');
         if (incSecuredEl) incSecuredEl.className = 'secured-pill' + (bonus.income.secured ? '' : ' hidden');
@@ -578,7 +597,8 @@
             set('inc-story2', 'Full-year target hit');
         } else {
             const shortM = ((incomeTarget - rev) / 1e6).toFixed(1);
-            set('inc-story2', '$' + shortM + 'M short · binary target');
+            const bfStr  = bookedFwd > 0 ? ' · $' + (bookedFwd / 1e6).toFixed(1) + 'M booked forward' : '';
+            set('inc-story2', '$' + shortM + 'M short · binary target' + bfStr);
         }
 
         // ── MARGIN COLUMN
@@ -602,8 +622,11 @@
         if (comp >= GOALS_BONUS) {
             set('gls-story2', 'Threshold cleared · ' + comp + ' completed');
         } else {
-            const need = GOALS_BONUS - comp;
-            set('gls-story2', need + ' short of ' + GOALS_BONUS + '-goal threshold');
+            const need   = GOALS_BONUS - comp;
+            const effStr = effectiveComp >= GOALS_BONUS
+                ? ' · ' + effectiveComp.toFixed(1) + ' effective completions'
+                : '';
+            set('gls-story2', need + ' short of ' + GOALS_BONUS + '-goal threshold' + effStr);
         }
 
         // ── SCHEME STRIP (derived from parsed targets, updated each FY)
@@ -613,10 +636,9 @@
         set('scheme-goals',  'DEPT GOALS · ' + GOALS_BONUS + ' of ' + GOALS_TOTAL + ' Completed = 2% · binary · EOFY review');
 
         // ── STATUS PILLS
-        const weeksElapsed = Math.max(1, (Date.now() - FY_START) / (7 * 24 * 60 * 60 * 1000));
-        renderStatusPill('inc-status-pill', revenueStatus(rev, incomeTarget, weeksElapsed));
+        renderStatusPill('inc-status-pill', revenueStatus(rev, incomeTarget, bookedFwd));
         renderStatusPill('mgn-status-pill', marginStatus(margin));
-        renderStatusPill('gls-status-pill', goalsStatus(comp, weeksElapsed));
+        renderStatusPill('gls-status-pill', goalsStatus(comp, effectiveComp));
 
         renderCharts(stats, comp);
     }
