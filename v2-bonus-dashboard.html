@@ -824,12 +824,11 @@
             const gp  = cumGP[i]  || 0;
             return inc > 0 ? (gp / inc) * 100 : 0;
         });
-        // Margin forecast: starts at actual endpoint, follows budget margin pace forward
+        // Margin forecast: flat extension at current YTD margin ("if margin holds")
         const mgnForecastArr = new Array(12).fill(null);
-        mgnForecastArr[currentMonthIdx] = cumActualMgn[currentMonthIdx] || 0;
-        for (let m = currentMonthIdx + 1; m < 12; m++) {
-            const delta = (budgMgn[m] || 0) - (budgMgn[m - 1] || 0);
-            mgnForecastArr[m] = mgnForecastArr[m - 1] + delta;
+        const ytdMgn = fd.ytdActualMargin || 0;
+        for (let m = currentMonthIdx; m < 12; m++) {
+            mgnForecastArr[m] = ytdMgn;
         }
 
         if (marginChart) marginChart.destroy();
@@ -875,7 +874,7 @@
                         order: 1
                     },
                     {
-                        label: 'Forecast (budget pace)',
+                        label: 'If margin holds (' + ytdMgn.toFixed(1) + '%)',
                         data: mgnForecastArr,
                         borderColor: '#00CFFF',
                         borderWidth: 2.5,
