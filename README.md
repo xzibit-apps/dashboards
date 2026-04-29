@@ -68,17 +68,13 @@ The goals tab (gid `368453036`) is parsed per row. Expected column layout:
 | 0 | Department name (must match one of the 9 in `DEPT_NAMES`) |
 | 1 | Goal title |
 | 2–8 | Review status columns (one per review cycle, e.g. "March 2026", "April 2026") |
-| 9 | Notes from last meeting (exposed as `.note` on each goal object; rendered in a later PR) |
-| (variable) | `% Complete` — found by header label (case-insensitive), not index; 0–100 per goal; owned by dept leads |
+| 9 | Notes from last meeting (exposed as `.note` on each goal object) |
 
 The code scans columns 2–8 **right-to-left** and takes the first non-empty cell as `currentStatus`. This means the April 2026 review always wins over March 2026 if both are populated. The header row (row 0) provides the `reviewDate` label for each column.
 
-`% Complete` is located by scanning the header row for the label (case-insensitive). If absent, `gd.effectiveCompletion` is set to `null` and a `console.warn` is logged; the Goals status pill falls back to pace-projection.
+The Goals status pill is derived from `gd.statuses`: **Completed** goals count as done; **On Track** goals count as expected done by EOY; **At Risk** goals may still make it. The threshold is `GOALS_BONUS` (14). No extra columns in the sheet are needed.
 
 All three dashboards expose `window.gd.goals` (array of goal objects) and `window.bonus` (computeBonus output) in the browser console for dev inspection.
-
-Derived value on `window.gd`:
-- `gd.effectiveCompletion` — `sum(goal.percentComplete / 100)` across all goals; a completion-equivalent count (e.g. 7 fully-Completed + 13 at 60% = 14.8); `null` when `% Complete` column is absent
 
 ## Local preview
 
