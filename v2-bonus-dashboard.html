@@ -733,12 +733,12 @@
         const cumActual = fd.cumulativeActualIncome || Array(12).fill(0);
         // Actual plotted only through currentMonthIdx; nulls beyond so line stops cleanly
         const cumActualLine = MONTH_LABELS.map((_, i) => i < sliceLen ? (cumActual[i] || 0) : null);
-        // Forecast: starts at actual endpoint, follows budget pace forward
+        // Forecast: starts at actual endpoint, adds per-month Realistic Pipeline Value forward
         const revForecastArr = new Array(12).fill(null);
         revForecastArr[currentMonthIdx] = cumActual[currentMonthIdx] || 0;
+        const pipeline = fd.realisticPipeline || Array(12).fill(0);
         for (let m = currentMonthIdx + 1; m < 12; m++) {
-            const delta = (cumBudget[m] || 0) - (cumBudget[m - 1] || 0);
-            revForecastArr[m] = revForecastArr[m - 1] + delta;
+            revForecastArr[m] = revForecastArr[m - 1] + (pipeline[m] || 0);
         }
 
         if (revenueChart) revenueChart.destroy();
@@ -773,7 +773,7 @@
                         order: 1
                     },
                     {
-                        label: 'Forecast (budget pace)',
+                        label: 'Forecast (with pipeline)',
                         data: revForecastArr,
                         borderColor: '#00CFFF',
                         borderWidth: 2.5,
